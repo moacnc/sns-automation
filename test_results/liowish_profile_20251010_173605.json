@@ -1,0 +1,26 @@
+{
+  "test_time": "2025-10-10T17:35:11.937797",
+  "device_id": "R3CN70D9ZBY",
+  "target_username": "liowish",
+  "steps": {
+    "device_connection": {
+      "status": "success",
+      "screen_size": [
+        1080,
+        2400
+      ]
+    }
+  },
+  "screenshots": {
+    "screen_ready": "test_liowish/01_screen_ready.png",
+    "instagram_home": "test_liowish/02_instagram_home.png",
+    "search_tab": "test_liowish/03_search_tab.png",
+    "search_results": "test_liowish/04_search_results.png",
+    "profile_page": "test_liowish/05_profile_page.png",
+    "profile_scrolled": "test_liowish/06_profile_scrolled.png",
+    "profile_final": "test_liowish/07_profile_final.png"
+  },
+  "profile_data": null,
+  "success": false,
+  "error": "프로필 정보 추출 실패 - GPT-4 Vision 응답 없음"
+}

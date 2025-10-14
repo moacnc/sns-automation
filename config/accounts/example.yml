@@ -1,0 +1,109 @@
+# GramAddict 설정 파일 예시
+# 이 파일을 복사하여 실제 계정 설정을 만드세요
+# cp example.yml myaccount.yml
+
+# ===== 계정 정보 =====
+username: your_instagram_username
+# device: DEVICE_ID  # adb devices 명령어로 확인한 디바이스 ID (선택사항)
+
+# ===== 작업 설정 =====
+interactions:
+  # 해시태그 게시물과 상호작용
+  - interact-hashtag-posts:
+      # 타겟 해시태그 목록
+      hashtags:
+        - travel
+        - photography
+        - foodie
+      # 게시물당 좋아요 개수
+      likes-count: 2-4
+      # 팔로우 비율 (%)
+      follow-percentage: 30
+      # 작업할 게시물 개수
+      amount: 10-20
+      # 작업 후 대기 시간 (분)
+      wait-after: 60-120
+
+  # 특정 사용자의 팔로워와 상호작용
+  # - interact-user-followers:
+  #     usernames:
+  #       - target_account_1
+  #       - target_account_2
+  #     amount: 10-15
+  #     likes-count: 2-3
+  #     follow-percentage: 40
+
+  # 언팔로우 (3일 후 실행 권장)
+  # - unfollow:
+  #     unfollow-non-followers: 20-30
+  #     unfollow-any: 10-15
+
+# ===== 안전 제한 설정 =====
+limits:
+  # 하루 최대 좋아요 수 (30-50 권장)
+  likes-per-day: 50
+  # 하루 최대 팔로우 수 (20-30 권장)
+  follows-per-day: 30
+  # 하루 최대 언팔로우 수
+  unfollows-per-day: 30
+  # 하루 최대 댓글 수 (5-10 권장)
+  comments-per-day: 10
+  # 하루 최대 시청 스토리 수
+  stories-per-day: 50
+
+# ===== 작업 시간 설정 =====
+working-hours:
+  # 작업 시간대 (새벽 시간 피하기)
+  - 09:00-12:00
+  - 14:00-17:00
+  - 19:00-22:00
+
+# ===== 세션 설정 =====
+# 작업 세션 길이 (분)
+session-duration: 20-30
+# 세션 간 휴식 시간 (분)
+session-cooldown: 15-30
+
+# ===== 속도 설정 =====
+# 속도 배수 (1.0 = 정상, 1.5-2.0 = 느림, 더 안전)
+speed-multiplier: 1.5
+
+# ===== 필터 설정 =====
+filters:
+  # 팔로워 수 필터
+  min-followers: 50
+  max-followers: 10000
+  # 팔로잉 수 필터
+  min-following: 50
+  max-following: 5000
+  # 팔로워/팔로잉 비율
+  min-followers-to-following-ratio: 0.5
+  max-followers-to-following-ratio: 2.0
+  # 게시물 수 필터
+  min-posts: 3
+  # 비즈니스/크리에이터 계정 스킵
+  skip-business: false
+  skip-creator: false
+
+# ===== 댓글 설정 (선택사항) =====
+# comments-list:
+#   - "Nice post!"
+#   - "Great content!"
+#   - "Love it!"
+#   - "Amazing!"
+
+# ===== 고급 설정 =====
+# 스크린샷 저장 (디버깅용)
+save-screenshots: false
+
+# 로그 레벨 (DEBUG, INFO, WARNING, ERROR)
+log-level: INFO
+
+# 에러 발생 시 재시도 횟수
+max-retries: 3
+
+# ===== 참고사항 =====
+# 1. 처음에는 낮은 값으로 시작하여 점진적으로 증가
+# 2. speed-multiplier는 1.5 이상 권장
+# 3. working-hours는 자연스러운 시간대 설정
+# 4. 신규 계정은 2주 이상 수동 사용 후 자동화 시작

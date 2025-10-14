@@ -1,0 +1,32 @@
+# Instagram Automation with GramAddict
+# Python 3.6-3.9 required
+
+# Core dependency
+gramaddict>=3.2.0
+
+# Logging and utilities
+loguru>=0.7.0
+
+# Database - PostgreSQL (AlloyDB)
+psycopg2-binary>=2.9.9
+# Alternative for production: psycopg2>=2.9.9 (requires PostgreSQL dev libraries)
+
+# Configuration
+pyyaml>=6.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Scheduling (optional, for future enhancements)
+schedule>=1.2.0
+
+# Data handling
+python-dateutil>=2.8.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# OpenAI Agents SDK
+openai-agents>=0.3.3
+openai>=1.107.1

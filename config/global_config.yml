@@ -1,0 +1,122 @@
+# 전역 설정 파일
+# 모든 계정에 공통으로 적용되는 설정
+
+# ===== 데이터베이스 설정 (PostgreSQL/AlloyDB) =====
+database:
+  # 데이터베이스 타입 (postgresql)
+  type: postgresql
+
+  # 연결 설정 (환경변수 우선 사용)
+  # 실제 값은 .env 파일에 설정하세요
+  host: ${DB_HOST:-localhost}
+  port: ${DB_PORT:-5432}
+  name: ${DB_NAME:-instagram_automation}
+  user: ${DB_USER:-postgres}
+  # password는 반드시 환경변수(DB_PASSWORD)로 설정
+
+  # SSL 설정 (AlloyDB는 'require' 권장)
+  sslmode: ${DB_SSLMODE:-prefer}
+
+  # 커넥션 풀 설정
+  pool:
+    min_connections: 1
+    max_connections: 10
+
+  # 백업 설정
+  backup_enabled: true
+  backup_interval_days: 7
+
+# ===== 로그 설정 =====
+logging:
+  # 로그 디렉토리
+  log_dir: logs/custom
+  # 로그 레벨 (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  level: INFO
+  # 로그 파일 최대 크기 (MB)
+  max_file_size_mb: 10
+  # 로그 파일 보관 개수
+  backup_count: 30
+  # 로그 형식
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}"
+
+# ===== GramAddict 설정 =====
+gramaddict:
+  # GramAddict 실행 파일 경로
+  executable: gramaddict
+  # GramAddict 로그 디렉토리
+  log_dir: logs/gramaddict
+  # 스크린샷 저장 디렉토리
+  screenshot_dir: logs/screenshots
+  # Crash 로그 디렉토리
+  crash_dir: logs/crashes
+  # GramAddict 버전 호환성
+  min_version: 3.2.0
+
+# ===== 스케줄링 설정 =====
+scheduling:
+  # 스케줄러 활성화
+  enabled: false
+  # 체크 간격 (분)
+  check_interval_minutes: 30
+  # 자동 재시작
+  auto_restart: true
+  # 최대 재시작 횟수 (하루)
+  max_restarts_per_day: 3
+
+# ===== 알림 설정 =====
+notifications:
+  # 알림 활성화
+  enabled: false
+  # 에러 발생 시 알림
+  on_error: true
+  # 작업 완료 시 알림
+  on_completion: false
+  # 알림 방법 (email, slack, telegram)
+  method: email
+  # 이메일 설정 (선택사항)
+  email:
+    smtp_server: smtp.gmail.com
+    smtp_port: 587
+    sender: your_email@gmail.com
+    receiver: your_email@gmail.com
+    # 비밀번호는 환경변수로 설정: EMAIL_PASSWORD
+
+# ===== 안전 설정 =====
+safety:
+  # 계정 제재 감지 시 자동 중지
+  auto_stop_on_ban: true
+  # 에러 연속 발생 시 중지 (횟수)
+  stop_after_errors: 5
+  # 안전 모드 (더 보수적인 설정)
+  safe_mode: true
+  # 테스트 모드 (실제 작업 없이 시뮬레이션)
+  test_mode: false
+
+# ===== 성능 설정 =====
+performance:
+  # 동시 실행 계정 수 (1 권장)
+  max_concurrent_accounts: 1
+  # 메모리 제한 (MB)
+  max_memory_mb: 500
+  # CPU 사용률 제한 (%)
+  max_cpu_percent: 50
+
+# ===== 백업 설정 =====
+backup:
+  # 백업 활성화
+  enabled: true
+  # 백업 디렉토리
+  backup_dir: backups
+  # 백업 주기 (일)
+  interval_days: 7
+  # 백업 보관 개수
+  keep_backups: 4
+
+# ===== 개발자 설정 =====
+developer:
+  # 디버그 모드
+  debug: false
+  # 상세 로그
+  verbose: false
+  # 프로파일링 활성화
+  profiling: false

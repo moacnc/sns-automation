@@ -1,0 +1,36 @@
+{
+  "test_time": "2025-10-10T17:31:32.873111",
+  "device_id": "R3CN70D9ZBY",
+  "target_username": "liowish",
+  "steps": {
+    "device_connection": {
+      "status": "success",
+      "screen_size": [
+        1080,
+        2400
+      ]
+    }
+  },
+  "screenshots": {
+    "screen_ready": "test_liowish/01_screen_ready.png",
+    "instagram_home": "test_liowish/02_instagram_home.png",
+    "search_tab": "test_liowish/03_search_tab.png",
+    "search_results": "test_liowish/04_search_results.png",
+    "profile_page": "test_liowish/05_profile_page.png",
+    "profile_scrolled": "test_liowish/06_profile_scrolled.png",
+    "profile_final": "test_liowish/07_profile_final.png"
+  },
+  "profile_data": {
+    "username": "username",
+    "fullname": "Full Name",
+    "bio": "This is a sample bio.",
+    "post_count": 123,
+    "follower_count": "1.2K",
+    "following_count": "345",
+    "is_verified": false,
+    "is_private": false,
+    "is_business": false
+  },
+  "success": true,
+  "error": null
+}

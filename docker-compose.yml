@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  instagram-automation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: instagram-automation
+    volumes:
+      # Mount source code for development
+      - .:/app
+      # Mount ADB keys (if exists)
+      - ~/.android:/root/.android:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+    env_file:
+      - .env
+    # Enable privileged mode for ADB USB access
+    privileged: true
+    # Share host network for ADB
+    network_mode: host
+    # Keep container running
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+  # PostgreSQL database (optional, for production)
+  postgres:
+    image: postgres:15-alpine
+    container_name: instagram-postgres
+    environment:
+      - POSTGRES_DB=instagram_db
+      - POSTGRES_USER=instagram_user
+      - POSTGRES_PASSWORD=instagram_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Uncomment to enable database
+    # profiles:
+    #   - production
+
+volumes:
+  postgres_data:
