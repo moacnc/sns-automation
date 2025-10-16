@@ -1,8 +1,8 @@
-# Instagram Automation with GramAddict
-# Python 3.6-3.9 required
+# Instagram Automation - Pure ADB/uiautomator2
+# Python 3.8+ required
 
-# Core dependency
-gramaddict>=3.2.0
+# Core automation - ADB and uiautomator2
+uiautomator2>=3.0.0
 
 # Logging and utilities
 loguru>=0.7.0
@@ -23,10 +23,12 @@ schedule>=1.2.0
 # Data handling
 python-dateutil>=2.8.0
 
+# Image processing
+Pillow>=10.0.0
+
 # Testing
 pytest>=7.4.0
 pytest-cov>=4.1.0
 
-# OpenAI Agents SDK
-openai-agents>=0.3.3
+# OpenAI for Vision Analysis
 openai>=1.107.1

@@ -1,92 +1,91 @@
-# Instagram 자동화 시스템 - 개발 가이드
+# Instagram Automation - Development Guide
 
-**버전**: 3.0 (통합)
-**최종 수정**: 2025-10-10
-**목표**: 해시태그 스토리 리스토리 + 프로필 정보 수집 및 DM 발송
-
----
-
-## 📋 목차
-
-1. [프로젝트 개요](#1-프로젝트-개요)
-2. [빠른 시작 (15분)](#2-빠른-시작-15분)
-3. [시스템 아키텍처](#3-시스템-아키텍처)
-4. [핵심 기능 구현](#4-핵심-기능-구현)
-5. [개발 환경 설정](#5-개발-환경-설정)
-6. [AI Agents 사용법](#6-ai-agents-사용법)
-7. [데이터베이스 설정](#7-데이터베이스-설정)
-8. [안전성 및 리스크 관리](#8-안전성-및-리스크-관리)
-9. [구현 로드맵](#9-구현-로드맵)
-10. [문제 해결](#10-문제-해결)
+**Version**: 4.0 (Pure ADB/uiautomator2)
+**Last Updated**: 2025-10-14
+**Goal**: Instagram automation using direct ADB control with AI-powered features
 
 ---
 
-## 1. 프로젝트 개요
+## 📋 Table of Contents
 
-### 1.1 목표
-
-본 시스템은 두 가지 핵심 기능을 제공합니다:
-
-#### ✅ 기능 1: 해시태그 스토리 자동 리스토리 (필터링)
-- 내 계정으로 로그인
-- 특정 해시태그 스토리 검색
-- **불량 단어 필터링** (욕설, 광고, 부적절한 내용)
-- 안전한 스토리만 자동 리스토리
-
-#### ✅ 기능 2: 프로필 정보 수집 및 DM 발송
-- 특정 프로필 검색 (조건 기반)
-- 프로필 정보 자동 수집:
-  - 팔로워/팔로잉/포스팅 수
-  - 최근 게시물 및 댓글
-  - 참여율(Engagement Rate)
-- **AI 기반 맞춤형 DM** 자동 발송
-
-### 1.2 기술 스택
-
-| 레이어 | 기술 | 역할 |
-|--------|------|------|
-| **AI Layer** | OpenAI Agents SDK | 콘텐츠 필터링, DM 생성, 작업 계획 |
-| **Base Framework** | GramAddict 3.x | Instagram UI 자동화 |
-| **Core Engine** | UIAutomator2 | Android UI 제어 |
-| **Programming** | Python 3.9-3.11 | 메인 언어 |
-| **Database** | PostgreSQL/AlloyDB | 세션 로그, 프로필 데이터 |
-| **Device Control** | ADB | Android 디바이스 연결 |
-| **Logging** | Loguru | 구조화된 로깅 |
-
-### 1.3 개발 전략
-
-**3단계 순차적 접근**:
-1. **Stage 1** (현재): GramAddict 기반 - 안전하고 빠른 구현 ✅
-2. **Stage 2** (필요시): 네이티브 프레임워크 - 고급 기능
-3. **Stage 3** (필요시): Appium 통합 - 크로스 플랫폼
+1. [Project Overview](#1-project-overview)
+2. [Quick Start (15 minutes)](#2-quick-start-15-minutes)
+3. [System Architecture](#3-system-architecture)
+4. [Core Features](#4-core-features)
+5. [Development Setup](#5-development-setup)
+6. [Testing](#6-testing)
+7. [Database Configuration](#7-database-configuration)
+8. [Safety & Best Practices](#8-safety--best-practices)
+9. [Troubleshooting](#9-troubleshooting)
 
 ---
 
-## 2. 빠른 시작 (15분)
+## 1. Project Overview
 
-### Step 1: 자동 설정 (권장)
+### 1.1 Goals
+
+This system provides Instagram automation with:
+
+#### ✅ Feature 1: User Search and Follow
+- Navigate to user profiles
+- Detect follow status (follow/following/requested/unknown)
+- Smart follow (never unfollow existing follows)
+
+#### ✅ Feature 2: Profile Information Scraping
+- Extract profile data using GPT-4 Vision OCR
+- Collect followers, following, posts count
+- Analyze bio and profile information
+
+#### ✅ Feature 3: Story Automation (Coming Soon)
+- View and analyze stories
+- Content filtering with AI
+- Automated reposting
+
+### 1.2 Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Device Control** | ADB | Android Debug Bridge |
+| **UI Automation** | uiautomator2 | Element detection and interaction |
+| **AI Layer** | OpenAI GPT-4 Vision | Image analysis, OCR, content filtering |
+| **Language** | Python 3.8+ | Core implementation |
+| **Database** | PostgreSQL/AlloyDB | Session logs, profile data |
+| **Logging** | Loguru | Structured logging |
+
+### 1.3 Key Principles
+
+- ✅ **Pure ADB/uiautomator2**: No third-party automation frameworks
+- ✅ **Multi-layer Fallback**: Resource ID → Text → Coordinates
+- ✅ **GPT Vision for Intelligence**: OCR and analysis, not navigation
+- ✅ **Safety First**: Status detection, rate limiting, error handling
+
+---
+
+## 2. Quick Start (15 minutes)
+
+### Step 1: Setup Script (Recommended)
 
 ```bash
-# 한 번에 모든 설정 완료
+# Automated setup (recommended)
 ./scripts/setup_dev.sh
 ```
 
-이 스크립트는 다음을 자동으로 수행합니다:
-- ✅ Python 가상환경 생성
-- ✅ 패키지 설치 (GramAddict, OpenAI SDK 등)
-- ✅ 환경변수 파일 생성
-- ✅ PostgreSQL 시작 (Docker)
-- ✅ 데이터베이스 연결 테스트
+This script automatically:
+- ✅ Creates Python virtual environment
+- ✅ Installs dependencies (uiautomator2, OpenAI SDK, etc.)
+- ✅ Creates environment file
+- ✅ Starts PostgreSQL (Docker)
+- ✅ Tests database connection
 
-### Step 2: 환경변수 설정
+### Step 2: Environment Variables
 
-`.env` 파일에 API Key 추가:
+Edit `.env` file and add your API key:
 
 ```bash
-# OpenAI API Key (필수)
+# OpenAI API Key (required)
 OPENAI_API_KEY=sk-your-api-key-here
 
-# PostgreSQL (자동 설정됨)
+# PostgreSQL (auto-configured)
 DB_HOST=127.0.0.1
 DB_PORT=5434
 DB_NAME=instagram_automation
@@ -94,908 +93,449 @@ DB_USER=postgres
 DB_PASSWORD=devpassword123
 ```
 
-### Step 3: Android 디바이스 연결
+### Step 3: Android Device Setup
 
 ```bash
-# 디바이스 연결 확인
+# 1. Enable USB Debugging on Android device
+#    Settings → About Phone → Tap "Build Number" 7 times
+#    Settings → Developer Options → Enable "USB Debugging"
+
+# 2. Connect device and verify
 adb devices
+# Should show: <DEVICE_ID>    device
 
-# 출력 예시:
-# List of devices attached
-# R3CN70D9ZBY    device
+# 3. Initialize uiautomator2 service
+python3 -m uiautomator2 init
+
+# 4. Test connection
+python3 tests/phase1_infrastructure/test_device_connection.py
 ```
 
-### Step 4: 첫 실행 테스트
+### Step 4: Run Your First Test
 
 ```bash
-# 가상환경 활성화
-source gramaddict-env/bin/activate
+# Test Instagram launch
+python3 tests/phase1_infrastructure/test_instagram_launch.py
 
-# Instagram 실행 테스트
-python -m src.main --config config/accounts/example.yml
+# Test tab navigation
+python3 tests/phase2_navigation/test_tab_navigation.py
+
+# Test user search and follow
+python3 tests/phase3_vision/test_follow_user.py
 ```
-
-**✅ 15분 만에 설정 완료!**
 
 ---
 
-## 3. 시스템 아키텍처
+## 3. System Architecture
 
-### 3.1 전체 구조
+### 3.1 High-Level Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                   User Interface Layer                        │
-│  ┌────────────┐  ┌──────────────┐  ┌──────────────────────┐ │
-│  │ CLI        │  │ Scheduler    │  │ Web Dashboard (TBD) │ │
-│  └────────────┘  └──────────────┘  └──────────────────────┘ │
-└──────────────────────────────────────────────────────────────┘
-                            ▼
-┌──────────────────────────────────────────────────────────────┐
-│              AI Agent Layer (OpenAI Agents SDK)               │
-│  ┌────────────────┐ ┌────────────────┐ ┌─────────────────┐  │
-│  │ ContentFilter  │ │ ProfileScraper │ │ DMComposer      │  │
-│  │ Agent          │ │ Agent          │ │ Agent           │  │
-│  └────────────────┘ └────────────────┘ └─────────────────┘  │
-│  ┌────────────────┐ ┌────────────────┐                      │
-│  │ ConfigGen      │ │ Planning       │                      │
-│  │ Agent (✅)     │ │ Agent (✅)     │                      │
-│  └────────────────┘ └────────────────┘                      │
-└──────────────────────────────────────────────────────────────┘
-                            ▼
-┌──────────────────────────────────────────────────────────────┐
-│              Task Management Layer                            │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │               SmartTaskManager (✅)                    │  │
-│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐  │  │
-│  │  │ Story        │ │ Profile      │ │ DM           │  │  │
-│  │  │ Restory Mgr  │ │ Collection   │ │ Sender Mgr   │  │  │
-│  │  └──────────────┘ └──────────────┘ └──────────────┘  │  │
-│  └────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
-                            ▼
-┌──────────────────────────────────────────────────────────────┐
-│           GramAddict Integration Layer                        │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │          GramAddictSessionRunner (✅)                  │  │
-│  │  - Interaction Engine (좋아요, 팔로우, 스토리 등)     │  │
-│  │  - Safety Features (계정 제재 방지)                   │  │
-│  │  - Human-like Behavior (인간 행동 패턴)               │  │
-│  └────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
-                            ▼
-┌──────────────────────────────────────────────────────────────┐
-│  UIAutomator2 → ADB → Android Device + Instagram App         │
-└──────────────────────────────────────────────────────────────┘
-                            ▼
-┌──────────────────────────────────────────────────────────────┐
-│              Data Storage (PostgreSQL/AlloyDB)                │
-│  sessions | profile_data | dm_campaigns | restory_logs       │
-└──────────────────────────────────────────────────────────────┘
+Application Layer (tests/, examples/)
+           ↓
+Navigation Wrapper (src/gramaddict_wrapper/)
+    ├── InstagramNavigator (navigation.py)
+    ├── VisionAnalyzer (vision_analyzer.py)
+    ├── ProfileScraper (profile_scraper.py)
+    ├── StoryRestory (story_restory.py)
+    └── DMSender (dm_sender.py)
+           ↓
+Core Technologies
+    ├── ADB + uiautomator2 (Device control)
+    └── OpenAI GPT-4 Vision (AI analysis)
+           ↓
+Android Device + Instagram App
 ```
 
-### 3.2 주요 컴포넌트
+> **Note**: Despite directory name "gramaddict_wrapper", this uses **pure ADB and uiautomator2** with no third-party automation frameworks.
 
-#### ✅ 구현 완료
-1. **SmartTaskManager**: AI 강화 작업 관리자
-2. **ConfigGeneratorAgent**: 자연어 → YAML 설정 변환
-3. **PlanningAgent**: 계정 통계 분석 및 계획 생성
-4. **GramAddictSessionRunner**: GramAddict 실행 래퍼
-5. **DatabaseHandler**: PostgreSQL 연동 (재연결 로직 포함)
-6. **SessionLock**: 동시성 제어
+### 3.2 Multi-layer Navigation Fallback
 
-#### 🚧 개발 필요
-7. **ContentFilterAgent**: 스토리 필터링 (텍스트 + 이미지)
-8. **ProfileScraperAgent**: 프로필 정보 수집
-9. **DMComposerAgent**: AI 기반 DM 생성
-10. **StoryRestoryManager**: 스토리 리스토리 관리
-11. **DMSenderManager**: DM 발송 관리
+1. **Resource ID** (Primary)
+   ```python
+   d(resourceId="com.instagram.android:id/search_edit_text")
+   ```
+
+2. **Text Matching** (Fallback)
+   ```python
+   d(text="Search")
+   ```
+
+3. **Coordinates** (Final Fallback)
+   ```python
+   d.click(540, 168)  # Resolution-specific
+   ```
 
 ---
 
-## 4. 핵심 기능 구현
+## 4. Core Features
 
-### 4.1 기능 1: 해시태그 스토리 리스토리
-
-#### 워크플로우
-
-```
-1. 사용자 입력
-   ↓
-   타겟 해시태그: ["맛집", "카페"]
-   불량 단어: ["욕설", "광고"]
-   일일 한도: 20개
-
-2. SmartTaskManager
-   ↓
-   AI로 설정 생성 + 필터링 규칙 적용
-
-3. GramAddict
-   ↓
-   Instagram 실행 → 해시태그 검색 → 스토리 목록 조회
-
-4. ContentFilterAgent (개발 필요)
-   ↓
-   텍스트 필터링 (정규식 + OpenAI Moderation)
-   이미지 필터링 (GPT-4 Vision)
-
-5. 필터링 결과
-   ↓
-   ✅ 안전 → 리스토리
-   ❌ 위험 → 건너뛰기 + 로그
-
-6. 결과 저장
-   ↓
-   DB에 세션 기록
-```
-
-#### 사용 예제
+### 4.1 User Search and Follow
 
 ```python
-from src.wrapper.smart_task_manager import SmartTaskManager
+from src.gramaddict_wrapper import InstagramNavigator
 
-# 자연어로 설정 생성
-tm = SmartTaskManager.from_prompt(
-    """
-    해시태그 스토리 리스토리 작업
-    - 해시태그: #맛집, #서울카페
-    - 하루 20개 리스토리
-    - 불량 단어 필터링
-    - 매우 안전한 속도
-    """,
-    username="my_account"
-)
+# Initialize
+nav = InstagramNavigator()
+nav.connect()
+nav.launch_instagram()
 
-# 불량 단어 리스트
-config_overrides = {
-    "content-filter": {
-        "enabled": True,
-        "bad-words": ["욕설", "광고", "스팸"],
-        "filter-action": "skip"
-    }
-}
+# Search user
+nav.search_username("targetuser")
 
-# AI 계획 생성 및 실행
-plan = tm.get_intelligent_plan(
-    goals={
-        "daily_restories": 20,
-        "target_hashtags": ["맛집", "서울카페"]
-    }
-)
+# Check follow status
+status = nav.check_follow_status()
+print(f"Status: {status}")  # "follow", "following", "requested", "unknown"
 
-result = tm.run_with_plan(plan, config_overrides=config_overrides)
-
-if result.succeeded:
-    stats = tm.get_session_stats(result.session_id)
-    print(f"리스토리: {stats.get('total_restories')}")
-    print(f"필터링: {stats.get('filtered_count')}")
+# Follow if not already following
+if status == "follow":
+    success = nav.follow_user()
+    print("✅ Followed user" if success else "❌ Failed")
 ```
 
-### 4.2 기능 2: 프로필 수집 및 DM 발송
-
-#### 워크플로우
-
-```
-1. 사용자 입력
-   ↓
-   검색 조건: {"niche": "fashion", "follower_range": (10k, 100k)}
-   DM 템플릿: "collaboration_proposal"
-
-2. ProfileScraperAgent (개발 필요)
-   ↓
-   Instagram 검색 → 프로필 목록 수집 → 조건 필터링
-
-3. 상세 정보 수집
-   ↓
-   팔로워/팔로잉/포스팅 수
-   최근 게시물 분석
-   참여율 계산
-
-4. DB 저장
-   ↓
-   profile_data 테이블
-
-5. DMComposerAgent (개발 필요)
-   ↓
-   프로필 데이터 분석 → 개인화 메시지 생성 (GPT)
-
-6. DM 발송
-   ↓
-   GramAddict로 자동 발송 (60초 대기)
-
-7. 결과 저장
-   ↓
-   dm_sent 테이블
-```
-
-#### 사용 예제
+### 4.2 Profile Scraping
 
 ```python
-from src.agents.profile_scraper_agent import ProfileScraperAgent
-from src.agents.dm_composer_agent import DMComposerAgent
-from src.wrapper.smart_task_manager import SmartTaskManager
+from src.gramaddict_wrapper import InstagramNavigator, ProfileScraper
 
-# Agents 초기화
-scraper = ProfileScraperAgent()
-dm_agent = DMComposerAgent()
+nav = InstagramNavigator()
+nav.connect()
+scraper = ProfileScraper(nav)
 
-tm = SmartTaskManager.from_prompt(
-    """
-    패션 인플루언서 DM 발송
-    - 팔로워 10k-100k
-    - 하루 30명
-    - 개인화 메시지
-    """,
-    username="my_brand"
-)
+# Scrape profile
+profile = scraper.scrape_profile("targetuser")
+print(f"Username: {profile['username']}")
+print(f"Followers: {profile['follower_count']}")
+print(f"Following: {profile['following_count']}")
+print(f"Bio: {profile['bio']}")
+```
 
-# 프로필 검색
-profiles = scraper.search_profiles(
-    criteria={
-        "niche": "fashion",
-        "follower_range": (10000, 100000),
-        "engagement_rate_min": 3.0
-    },
-    limit=30
-)
+### 4.3 Content Analysis with GPT-4 Vision
 
-# 각 프로필에 DM 발송
-for username in profiles:
-    # 정보 수집
-    profile = scraper.collect_profile_info(username)
+```python
+from src.gramaddict_wrapper import VisionAnalyzer
 
-    # AI 메시지 생성
-    message = dm_agent.compose_personalized_dm(
-        profile_data=profile,
-        template_name="collaboration"
-    )
+vision = VisionAnalyzer()
 
-    # DM 발송
-    result = tm.send_dm(username, message)
+# Analyze profile screenshot
+profile_info = vision.analyze_profile_screenshot("profile.png")
+print(f"Followers: {profile_info['follower_count']}")
 
-    if result.succeeded:
-        print(f"✅ DM 발송: {username}")
+# Check follow status from image
+status = vision.check_follow_status("profile.png")
+print(f"Follow status: {status}")
 
-    time.sleep(60)  # 안전한 속도
+# Check content appropriateness
+is_safe = vision.check_content_appropriateness("content.png")
+print(f"Content is safe: {is_safe}")
 ```
 
 ---
 
-## 5. 개발 환경 설정
+## 5. Development Setup
 
-### 5.1 필수 요구사항
+### 5.1 Manual Setup (Alternative)
 
-| 항목 | 요구사항 |
-|------|----------|
-| **OS** | macOS, Linux, Windows |
-| **Python** | 3.9 - 3.11 (3.10+ 비권장) |
-| **Android** | Android 5.0+, Instagram 앱 설치 |
-| **ADB** | Android Debug Bridge |
-| **PostgreSQL** | 12+ (Docker 또는 로컬) |
-| **OpenAI API** | API Key 필수 |
+```bash
+# 1. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-### 5.2 프로젝트 구조
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Setup environment variables
+cp .env.example .env
+# Edit .env and add OPENAI_API_KEY
+
+# 4. Start PostgreSQL (Docker)
+docker run -d \
+  --name instagram-postgres \
+  -e POSTGRES_PASSWORD=devpassword123 \
+  -e POSTGRES_DB=instagram_automation \
+  -p 5434:5432 \
+  postgres:15-alpine
+
+# 5. Initialize database
+python3 scripts/init_db.py
+```
+
+### 5.2 Project Structure
 
 ```
-instagram-automation/
-├── config/
-│   ├── accounts/                    # 계정별 YAML 설정
-│   │   ├── example.yml
-│   │   └── my_account.yml
-│   ├── global_config.yml            # 전역 설정
-│   └── generated/                   # 동적 생성 설정 (gitignore)
+.
 ├── src/
-│   ├── agents/                      # 🤖 OpenAI Agents
-│   │   ├── config_agent.py          # ✅ 설정 생성
-│   │   ├── planning_agent.py        # ✅ 작업 계획
-│   │   ├── agent_manager.py         # ✅ Agent 통합
-│   │   ├── content_filter_agent.py  # 🚧 필터링 (개발 필요)
-│   │   ├── profile_scraper_agent.py # 🚧 프로필 수집
-│   │   └── dm_composer_agent.py     # 🚧 DM 생성
-│   ├── wrapper/
-│   │   ├── task_manager.py          # ✅ GramAddict 래퍼
-│   │   ├── smart_task_manager.py    # ✅ AI 강화 TaskManager
-│   │   ├── log_parser.py            # ✅ 로그 파싱
-│   │   ├── story_restory_manager.py # 🚧 스토리 관리
-│   │   └── dm_sender_manager.py     # 🚧 DM 관리
-│   ├── utils/
-│   │   ├── logger.py                # ✅ 로깅
-│   │   ├── db_handler.py            # ✅ PostgreSQL
-│   │   └── session_lock.py          # ✅ 동시성 제어
-│   ├── gramaddict_adapter/          # ✅ GramAddict 통합
-│   └── main.py                      # 메인 진입점
-├── logs/
-│   ├── gramaddict/                  # GramAddict 로그
-│   └── custom/                      # 커스텀 로그
-├── tests/                           # 테스트
-├── docs/                            # 문서
-├── scripts/
-│   ├── setup_dev.sh                 # 자동 설정
-│   └── dev.sh                       # 개발 도구
-├── docker/
-│   └── docker-compose.yml           # PostgreSQL 컨테이너
-├── .env                             # 환경변수 (gitignore)
-├── requirements.txt
-└── README.md
+│   ├── gramaddict_wrapper/      # Core navigation modules
+│   │   ├── navigation.py        # InstagramNavigator
+│   │   ├── vision_analyzer.py   # VisionAnalyzer
+│   │   ├── profile_scraper.py   # ProfileScraper
+│   │   ├── story_restory.py     # StoryRestory
+│   │   └── dm_sender.py         # DMSender
+│   ├── utils/                   # Utilities
+│   │   ├── db_handler.py        # Database operations
+│   │   └── logger.py            # Logging setup
+│   └── automation/              # Legacy modules
+│
+├── tests/                       # Phase-based test suite
+│   ├── phase1_infrastructure/   # Device & app tests
+│   ├── phase2_navigation/       # Navigation tests
+│   ├── phase3_vision/           # AI-powered features
+│   ├── phase4_integration/      # End-to-end tests
+│   └── phase5_advanced/         # Advanced features
+│
+├── config/                      # Configuration files
+├── scripts/                     # Setup and utility scripts
+├── docs/                        # Documentation
+└── requirements.txt             # Python dependencies
 ```
 
-### 5.3 개발 도구 사용
+### 5.3 Key Dependencies
 
-#### Makefile (권장)
+```txt
+# Core automation
+uiautomator2>=3.0.0
 
-```bash
-# 설정
-make setup
+# AI features
+openai>=1.107.1
 
-# PostgreSQL 관리
-make start       # 시작
-make stop        # 중지
-make logs        # 로그 확인
+# Database
+psycopg2-binary>=2.9.9
 
-# 데이터베이스
-make psql        # DB 접속
-make migrate     # 마이그레이션
-make test-db     # 연결 테스트
+# Utilities
+loguru>=0.7.0
+pyyaml>=6.0
+python-dotenv>=1.0.0
+Pillow>=10.0.0
 
-# 테스트
-pytest           # 전체 테스트
-pytest --cov     # 커버리지 포함
-```
-
-#### 개발 스크립트
-
-```bash
-./scripts/dev.sh help       # 도움말
-./scripts/dev.sh start      # PostgreSQL 시작
-./scripts/dev.sh psql       # DB 접속
-./scripts/dev.sh check      # 시스템 상태 확인
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
 ```
 
 ---
 
-## 6. AI Agents 사용법
+## 6. Testing
 
-### 6.1 기존 Agents (✅ 사용 가능)
+### 6.1 Phase-based Test Suite
 
-#### ConfigGeneratorAgent
+Run tests sequentially:
 
-```python
-from src.agents.config_agent import ConfigGeneratorAgent
+```bash
+# Phase 1: Infrastructure
+python3 tests/phase1_infrastructure/test_device_connection.py
+python3 tests/phase1_infrastructure/test_instagram_launch.py
 
-agent = ConfigGeneratorAgent()
+# Phase 2: Navigation
+python3 tests/phase2_navigation/test_tab_navigation.py
+python3 tests/phase2_navigation/test_search_user.py
 
-# 자연어 → YAML 설정
-config = agent.generate(
-    "여행 블로거, 하루 30개 좋아요, 안전 모드",
-    username="travel_account"
-)
+# Phase 3: Vision & Actions
+python3 tests/phase3_vision/test_follow_user.py
+python3 tests/phase3_vision/test_profile_ocr.py
+python3 tests/phase3_vision/test_content_filter.py
 
-# 파일로 저장
-agent.generate_and_save(
-    "여행 블로거, 하루 30개 좋아요",
-    username="travel_account",
-    output_path="config/accounts/travel.yml"
-)
+# Phase 4: Integration
+python3 tests/phase4_integration/test_profile_scraping.py
+
+# Phase 5: Advanced (Coming Soon)
+python3 tests/phase5_advanced/test_story_restory.py
 ```
 
-#### PlanningAgent
+### 6.2 Test Results
 
-```python
-from src.agents.planning_agent import PlanningAgent
-from src.utils.db_handler import DatabaseHandler
+All tests passing on Samsung SM-N981N (1080x2400, Android 13):
+- ✅ Phase 1: Device connection, Instagram launch
+- ✅ Phase 2: Tab navigation, user search
+- ✅ Phase 3: Follow with status detection
+- 🚧 Phase 4-5: In progress
 
-db = DatabaseHandler()
-agent = PlanningAgent(db_handler=db)
-
-# 계정 데이터 기반 계획 생성
-plan = agent.plan_daily_tasks(
-    username="my_account",
-    goals={"followers": 50, "timeframe": "1 week"}
-)
-
-print(f"추천 일일 좋아요: {plan['plan']['daily_likes']}")
-print(f"추천 해시태그: {plan['plan']['recommended_hashtags']}")
-print(f"신뢰도: {plan['confidence']:.1%}")
-```
-
-#### AgentManager (통합)
-
-```python
-from src.agents.agent_manager import AgentManager
-
-mgr = AgentManager(db_handler=db)
-
-# 설정 + 계획 동시 생성
-result = mgr.get_config_with_plan(
-    prompt="패션 계정, 하루 40개 좋아요",
-    username="fashion",
-    goals={"followers": 100, "timeframe": "1 week"}
-)
-
-config = result['config']
-plan = result['plan']
-```
-
-### 6.2 새로운 Agents (🚧 개발 필요)
-
-#### ContentFilterAgent (Phase 2)
-
-```python
-# 예정된 API
-from src.agents.content_filter_agent import ContentFilterAgent
-
-filter_agent = ContentFilterAgent()
-
-# 텍스트 필터링
-is_safe = filter_agent.check_text(
-    text="스토리 내용",
-    bad_words=["욕설", "광고"]
-)
-
-# 이미지 필터링 (GPT-4 Vision)
-is_safe_img = filter_agent.check_image(
-    image_path="story.jpg",
-    detect=["adult_content", "violence"]
-)
-```
-
-#### ProfileScraperAgent (Phase 3)
-
-```python
-# 예정된 API
-from src.agents.profile_scraper_agent import ProfileScraperAgent
-
-scraper = ProfileScraperAgent()
-
-# 프로필 검색
-profiles = scraper.search_profiles(
-    criteria={"niche": "fashion", "follower_range": (10000, 100000)},
-    limit=50
-)
-
-# 상세 정보 수집
-profile = scraper.collect_profile_info(
-    username="target",
-    collect_fields=["followers", "posts", "engagement_rate"]
-)
-```
-
-#### DMComposerAgent (Phase 3)
-
-```python
-# 예정된 API
-from src.agents.dm_composer_agent import DMComposerAgent
-
-dm_agent = DMComposerAgent()
-
-# 개인화 메시지 생성
-message = dm_agent.compose_personalized_dm(
-    profile_data=profile,
-    template_name="collaboration_proposal",
-    brand_info={"name": "My Brand"}
-)
-```
+Screenshots saved in `tests/phase*/screenshots/`
 
 ---
 
-## 7. 데이터베이스 설정
+## 7. Database Configuration
 
-### 7.1 로컬 PostgreSQL (Docker 권장)
-
-#### 자동 설정
+### 7.1 PostgreSQL Setup (Docker)
 
 ```bash
-# 한 번에 시작
-make start
+# Start PostgreSQL
+docker run -d \
+  --name instagram-postgres \
+  -e POSTGRES_PASSWORD=devpassword123 \
+  -e POSTGRES_DB=instagram_automation \
+  -p 5434:5432 \
+  postgres:15-alpine
 
-# 또는
-./scripts/dev.sh start
+# Stop PostgreSQL
+docker stop instagram-postgres
+
+# Remove PostgreSQL
+docker rm instagram-postgres
 ```
 
-#### 수동 설정
-
-```bash
-# PostgreSQL 시작
-cd docker
-docker-compose up -d postgres
-
-# 연결 테스트
-python scripts/db_test.py
-```
-
-### 7.2 데이터베이스 스키마
-
-#### 기존 스키마 (✅ 구현됨)
+### 7.2 Database Schema
 
 ```sql
--- 세션 로그
+-- Sessions table
 CREATE TABLE sessions (
-    session_id UUID PRIMARY KEY,
-    username VARCHAR(255),
+    id SERIAL PRIMARY KEY,
     device_id VARCHAR(255),
-    status VARCHAR(50),
-    started_at TIMESTAMP,
-    ended_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW()
+    account_name VARCHAR(255),
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    status VARCHAR(50)
 );
 
--- 상호작용 로그
-CREATE TABLE interactions (
+-- Actions log table
+CREATE TABLE action_logs (
     id SERIAL PRIMARY KEY,
-    session_id UUID REFERENCES sessions,
-    action_type VARCHAR(50),
-    target VARCHAR(255),
+    session_id INTEGER REFERENCES sessions(id),
+    action_type VARCHAR(100),
+    details TEXT,
     status VARCHAR(50),
     created_at TIMESTAMP DEFAULT NOW()
 );
-```
 
-#### 새로운 스키마 (🚧 Phase 2/3)
-
-```sql
--- 리스토리 세션
-CREATE TABLE restory_sessions (
-    session_id UUID PRIMARY KEY,
-    username VARCHAR(255),
-    target_hashtags TEXT[],
-    total_viewed INT DEFAULT 0,
-    total_restoried INT DEFAULT 0,
-    total_filtered INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- 필터링된 스토리
-CREATE TABLE filtered_stories (
-    id SERIAL PRIMARY KEY,
-    session_id UUID REFERENCES restory_sessions,
-    story_url TEXT,
-    filter_reason VARCHAR(255),
-    bad_words_found TEXT[],
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- 프로필 데이터
-CREATE TABLE profile_data (
+-- Profiles table
+CREATE TABLE profiles (
     id SERIAL PRIMARY KEY,
     username VARCHAR(255) UNIQUE,
-    followers INT,
-    following INT,
-    posts_count INT,
-    engagement_rate FLOAT,
+    follower_count INTEGER,
+    following_count INTEGER,
+    posts_count INTEGER,
     bio TEXT,
-    last_updated TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW()
+    is_verified BOOLEAN,
+    is_private BOOLEAN,
+    scraped_at TIMESTAMP
 );
-
--- DM 캠페인
-CREATE TABLE dm_campaigns (
-    campaign_id UUID PRIMARY KEY,
-    campaign_name VARCHAR(255),
-    target_criteria JSONB,
-    template_name VARCHAR(255),
-    daily_limit INT,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- DM 발송 기록
-CREATE TABLE dm_sent (
-    id SERIAL PRIMARY KEY,
-    campaign_id UUID REFERENCES dm_campaigns,
-    target_username VARCHAR(255),
-    message TEXT,  -- 암호화 필요
-    status VARCHAR(50),  -- sent, failed, responded
-    error_message TEXT,
-    sent_at TIMESTAMP,
-    responded_at TIMESTAMP
-);
-```
-
-### 7.3 DB 접속 및 쿼리
-
-```bash
-# PostgreSQL 접속
-make psql
-
-# 또는
-psql -h 127.0.0.1 -p 5434 -U postgres -d instagram_automation
-
-# 세션 조회
-SELECT * FROM sessions ORDER BY created_at DESC LIMIT 10;
-
-# 통계
-SELECT username, COUNT(*) as sessions
-FROM sessions
-GROUP BY username;
 ```
 
 ---
 
-## 8. 안전성 및 리스크 관리
+## 8. Safety & Best Practices
 
-### 8.1 Instagram 제재 방지 ⚠️ 최고 우선순위
+### 8.1 Safety Features
 
-#### GramAddict 내장 안전 기능 (✅)
-- ✅ 검증된 인간 행동 패턴
-- ✅ 랜덤 딜레이 (3-7초)
-- ✅ 자연스러운 스크롤
-- ✅ 작업 빈도 자동 제한
+1. **Follow Status Detection**: Never unfollow existing follows
+2. **Rate Limiting**: Built-in delays between actions
+3. **Error Handling**: Comprehensive try-catch blocks
+4. **Content Filtering**: AI-powered inappropriate content detection
+5. **Session Logging**: All actions logged to database
 
-#### 추가 대응 방안
-
-```yaml
-# config/accounts/my_account.yml
-
-# 안전한 한도 설정
-limits:
-  likes-per-day: 30-50         # 신규 계정: 30, 오래된 계정: 50
-  follows-per-day: 20-30
-  unfollows-per-day: 20-30
-  restories-per-day: 20        # 새 기능
-  dms-per-day: 30              # 새 기능
-
-# 작업 시간대 분산 (새벽 작업 금지)
-working-hours:
-  - 09:00-11:00
-  - 14:00-16:00
-  - 19:00-21:00
-
-# 느린 속도 (안전)
-speed-multiplier: 1.8-2.0
-```
-
-#### 신규 계정 워밍업
-
-```
-Week 1: 수동 사용 (자동화 금지)
-Week 2: 하루 10개 좋아요
-Week 3: 하루 20개 좋아요
-Week 4: 하루 30-50개 좋아요 (정상)
-```
-
-### 8.2 UI 변경 대응
-
-#### GramAddict 커뮤니티 대응 (✅)
-- ✅ GitHub Issues 구독
-- ✅ 정기 업데이트: `pip install --upgrade gramaddict`
-- ✅ 버전 고정 옵션 (안정성 우선 시)
-
-#### 롤백 전략
-
-```bash
-# 특정 버전 고정
-pip install gramaddict==3.2.12
-
-# requirements.txt에 명시
-gramaddict==3.2.12
-```
-
-### 8.3 데이터 보안
-
-#### 환경변수 관리
-
-```bash
-# .env 파일 (절대 커밋하지 말 것)
-OPENAI_API_KEY=sk-...
-DB_PASSWORD=...
-INSTAGRAM_USERNAME=...  # 자동 로그인용 (선택)
-```
-
-#### 민감 정보 암호화
+### 8.2 Best Practices
 
 ```python
-from cryptography.fernet import Fernet
+# ✅ Good: Always check status before action
+status = nav.check_follow_status()
+if status == "follow":
+    nav.follow_user()
 
-# DM 메시지 암호화
-def encrypt_message(message: str, key: bytes) -> str:
-    f = Fernet(key)
-    return f.encrypt(message.encode()).decode()
+# ❌ Bad: Blind action without checking
+nav.follow_user()  # Might try to unfollow!
 
-# 복호화
-def decrypt_message(encrypted: str, key: bytes) -> str:
-    f = Fernet(key)
-    return f.decrypt(encrypted.encode()).decode()
+# ✅ Good: Use context manager for cleanup
+with InstagramNavigator() as nav:
+    nav.connect()
+    # Your code here
+# Automatic cleanup
+
+# ✅ Good: Add delays for safety
+import time
+time.sleep(2)  # Human-like behavior
 ```
 
----
+### 8.3 Rate Limiting Guidelines
 
-## 9. 구현 로드맵
-
-### ✅ Phase 1: 기반 구조 (완료)
-
-- [x] GramAddict 통합
-- [x] OpenAI Agents SDK 통합
-- [x] ConfigGeneratorAgent
-- [x] PlanningAgent
-- [x] SmartTaskManager
-- [x] DatabaseHandler (재연결 로직)
-- [x] SessionLock (동시성 제어)
-- [x] 로그 파싱 개선
-- [x] 유닛 테스트
-
-### 🚧 Phase 2: 스토리 리스토리 기능 (2-3주)
-
-**주차별 계획**:
-
-#### 1주차
-- [ ] ContentFilterAgent 개발
-  - [ ] 텍스트 필터링 (정규식)
-  - [ ] OpenAI Moderation API 통합
-  - [ ] 불량 단어 DB 구축
-
-#### 2주차
-- [ ] GPT-4 Vision 이미지 분석
-- [ ] StoryRestoryManager 개발
-  - [ ] 해시태그 검색
-  - [ ] 스토리 내용 수집
-  - [ ] 리스토리 자동화
-
-#### 3주차
-- [ ] DB 스키마 확장 (restory_sessions, filtered_stories)
-- [ ] 테스트 및 검증
-  - [ ] 필터링 정확도 측정
-  - [ ] 리스토리 성공률 측정
-- [ ] 문서화
-
-### 🚧 Phase 3: 프로필 수집 및 DM (3-4주)
-
-**주차별 계획**:
-
-#### 1-2주차
-- [ ] ProfileScraperAgent 개발
-  - [ ] 프로필 검색 (해시태그, 위치)
-  - [ ] 상세 정보 수집
-  - [ ] 참여율 계산 알고리즘
-
-#### 2-3주차
-- [ ] DMComposerAgent 개발
-  - [ ] 템플릿 시스템
-  - [ ] GPT 기반 개인화
-  - [ ] A/B 테스팅
-
-#### 3-4주차
-- [ ] DMSenderManager 개발
-  - [ ] DM 발송 자동화
-  - [ ] 배치 처리
-  - [ ] 응답 추적
-- [ ] DB 스키마 확장 (profile_data, dm_campaigns, dm_sent)
-- [ ] 테스트 및 검증
-
-### 📅 Phase 4: 고급 기능 (4-6주, 선택)
-
-- [ ] 스케줄링 시스템
-- [ ] 실시간 모니터링
-- [ ] 웹 대시보드 (React)
-- [ ] 추가 AI Agents (SafetyMonitor, LogAnalysis)
+- **Actions per hour**: Max 30
+- **Profile views per hour**: Max 50
+- **Delay between actions**: 2-5 seconds
+- **Delay between sessions**: 30-60 minutes
 
 ---
 
-## 10. 문제 해결
+## 9. Troubleshooting
 
-### 10.1 ADB 연결 문제
+### 9.1 Common Issues
 
+#### Device not found
 ```bash
-# ADB 서버 재시작
-adb kill-server
-adb start-server
+# Check ADB connection
 adb devices
 
-# Wi-Fi ADB 사용 (USB 불안정 시)
-adb tcpip 5555
-adb connect <DEVICE_IP>:5555
+# If empty, reconnect device and enable USB debugging
+# Restart ADB server
+adb kill-server
+adb start-server
 ```
 
-### 10.2 Python 버전 오류
-
+#### uiautomator2 not working
 ```bash
-# Python 3.9-3.11 확인
-python --version
+# Reinitialize uiautomator2
+python3 -m uiautomator2 init
 
-# 가상환경 재생성
-rm -rf gramaddict-env
-python3.9 -m venv gramaddict-env
-source gramaddict-env/bin/activate
-pip install -r requirements.txt
+# Check service status
+python3 -c "import uiautomator2 as u2; d = u2.connect(); print(d.info)"
 ```
 
-### 10.3 OpenAI API 오류
-
+#### Instagram not launching
 ```bash
-# API Key 확인
-echo $OPENAI_API_KEY
+# Check if Instagram is installed
+adb shell pm list packages | grep instagram
 
-# .env 파일 확인
-cat .env | grep OPENAI_API_KEY
+# Clear Instagram cache
+adb shell pm clear com.instagram.android
 
-# API 비용 체크
-# https://platform.openai.com/usage
+# Restart device
+adb reboot
 ```
 
-### 10.4 PostgreSQL 연결 오류
-
+#### Coordinates not working
 ```bash
-# Docker 컨테이너 확인
-docker ps
+# Check device resolution
+adb shell wm size
+# Expected: Physical size: 1080x2400
 
-# 로그 확인
-docker logs instagram-postgres
-
-# 재시작
-make restart
-
-# 연결 테스트
-python scripts/db_test.py
+# Lock screen rotation
+adb shell settings put system accelerometer_rotation 0
+adb shell settings put system user_rotation 0
 ```
 
-### 10.5 GramAddict 실행 오류
+### 9.2 Debug Tips
 
-```bash
-# 로그 확인
-tail -f logs/gramaddict/<SESSION_ID>/gramaddict.log
+```python
+# Enable debug logging
+from loguru import logger
+logger.add("debug.log", level="DEBUG")
 
-# Instagram 앱 버전 확인 (너무 최신이면 미지원 가능)
-adb shell dumpsys package com.instagram.android | grep versionName
+# Take screenshot for debugging
+nav.screenshot("debug_screen.png")
 
-# GramAddict 업데이트
-pip install --upgrade gramaddict
+# Check device info
+import uiautomator2 as u2
+d = u2.connect()
+print(d.info)
+print(d.window_size())
 ```
+
+### 9.3 Getting Help
+
+1. Check [ARCHITECTURE.md](ARCHITECTURE.md) for system details
+2. Review test files in `tests/` for examples
+3. Check logs in `logs/` directory
+4. Open issue on GitHub with:
+   - Device model and Android version
+   - Error message and logs
+   - Steps to reproduce
 
 ---
 
-## 📚 추가 리소스
+## 📚 Additional Resources
 
-### 문서
-- [README.md](README.md) - 프로젝트 개요
-- [IMPROVEMENTS.md](IMPROVEMENTS.md) - 개선 사항
-- [OPENAI_AGENTS_INTEGRATION.md](OPENAI_AGENTS_INTEGRATION.md) - AI 통합 계획
-
-### 아카이브된 문서 (참고용)
-- [docs/archive/개발문서.md](docs/archive/개발문서.md) - 초기 개발 문서
-- [docs/archive/Local_Development.md](docs/archive/Local_Development.md) - 로컬 개발 가이드
-- [docs/archive/PostgreSQL_Setup.md](docs/archive/PostgreSQL_Setup.md) - DB 설정 상세
-- [docs/archive/AGENTS_USAGE_GUIDE.md](docs/archive/AGENTS_USAGE_GUIDE.md) - Agents 상세 가이드
-- [docs/archive/PROJECT_ARCHITECTURE.md](docs/archive/PROJECT_ARCHITECTURE.md) - 아키텍처 상세
-
-### 외부 링크
-- [GramAddict 공식 문서](https://docs.gramaddict.org/)
-- [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/ko/)
-- [Android ADB 가이드](https://developer.android.com/studio/command-line/adb)
+- [README.md](README.md) - Project overview and quick start
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Detailed system architecture
+- [docs/DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md) - Full documentation index
 
 ---
 
-## ✅ 체크리스트
-
-개발 시작 전 확인:
-
-- [ ] Android 디바이스 준비 (Android 5.0+, Instagram 설치)
-- [ ] ADB 연결 확인 (`adb devices`)
-- [ ] Python 3.9-3.11 설치
-- [ ] OpenAI API Key 발급 및 설정
-- [ ] PostgreSQL 실행 (Docker 또는 로컬)
-- [ ] 테스트 계정 준비 (제재되어도 괜찮은 계정)
-- [ ] `.env` 파일 설정
-- [ ] `./scripts/setup_dev.sh` 실행
-- [ ] 첫 실행 테스트 완료
-
----
-
-**작성일**: 2025-10-10
-**버전**: 3.0 (통합)
-**상태**: Phase 1 완료, Phase 2/3 진행 중
-**다음 업데이트**: Phase 2 완료 후
-
----
-
-## 🎯 결론
-
-이 문서 하나로 프로젝트의 **모든 것**을 파악할 수 있습니다:
-
-1. **빠른 시작**: 15분 안에 설정 완료
-2. **아키텍처**: 전체 시스템 구조 이해
-3. **핵심 기능**: 2가지 목표 구현 방법
-4. **AI Agents**: 기존 + 개발 필요 Agent 파악
-5. **데이터베이스**: 스키마 및 사용법
-6. **안전성**: 리스크 관리 전략
-7. **로드맵**: Phase별 구현 계획
-8. **문제 해결**: 일반적인 오류 대응
-
-**다음 단계**: Phase 2 (스토리 리스토리) 또는 Phase 3 (프로필 수집 + DM) 개발 시작! 🚀
+**Last Updated**: 2025-10-14
+**Version**: 4.0 (Pure ADB/uiautomator2)

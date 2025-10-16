@@ -1,65 +1,72 @@
-# Instagram Automation - GramAddict + GPT-4 Vision
+# Instagram Automation - Pure ADB/uiautomator2
 
-> Advanced Instagram automation combining GramAddict's robust UI selectors with GPT-4 Vision's image analysis capabilities.
+> Advanced Instagram automation using pure ADB commands and uiautomator2 with GPT-4 Vision for intelligent content analysis.
 
 ## 🎯 Overview
 
-This project provides production-ready Instagram automation for:
-- 📊 **Profile Scraping**: Extract profile information using GPT-4 Vision OCR
-- 📸 **Story Restory**: Automated story reposting with content filtering
-- 💬 **Personalized DMs**: AI-generated personalized direct messages using GPT-4o
+This project provides production-ready Instagram automation with:
+- 🚀 **Fast Navigation**: Direct ADB commands with coordinate-based tapping
+- 👤 **User Search & Follow**: Smart follow functionality with status detection
+- 📊 **Profile Analysis**: GPT-4 Vision OCR for profile information extraction
+- 📸 **Story Automation**: Automated story viewing and reposting (coming soon)
+- 🎯 **Content Filtering**: AI-powered inappropriate content detection
 
 ## ✨ Key Features
 
-- ✅ **Stable Navigation**: Uses GramAddict's UI selectors (no coordinate-based tapping)
-- ✅ **Smart Image Analysis**: GPT-4 Vision for OCR and content understanding
-- ✅ **Cost-Effective**: 70% reduction in API costs vs coordinate-based approaches
-- ✅ **Resolution-Independent**: Works on any Android device
-- ✅ **Content Filtering**: Automatic inappropriate content detection
-- ✅ **Personalization**: GPT-4o for context-aware DM generation
+- ✅ **Pure ADB/uiautomator2**: No GramAddict dependency, faster and more reliable
+- ✅ **Smart Follow System**: Auto-detect follow status, never unfollow
+- ✅ **Multi-layer Fallback**: Resource ID → Text → Coordinate-based clicking
+- ✅ **Screen Rotation Lock**: Consistent coordinates across sessions
+- ✅ **GPT-4 Vision**: Intelligent image analysis and OCR
+- ✅ **Comprehensive Testing**: Phase-based test suite with screenshots
 
 ## 🏗️ Architecture
 
 ```
-Application Layer
-    └── examples/test_new_architecture.py
+Test Suite (tests/)
+    ├── phase1_infrastructure/    # ADB, UIAutomator2, Instagram launch
+    ├── phase2_navigation/         # Tab navigation, user search
+    ├── phase3_vision/             # Follow, OCR, content filter
+    ├── phase4_integration/        # Profile scraping
+    └── phase5_advanced/           # Story automation
 
-GramAddict Wrapper Layer (src/gramaddict_wrapper/)
-    ├── navigation.py          # Tab navigation, search
-    ├── vision_analyzer.py     # GPT-4 Vision image analysis
-    ├── profile_scraper.py     # Profile information extraction
-    ├── story_restory.py       # Story reposting automation
-    └── dm_sender.py           # Personalized DM sending
+Core Navigation (src/gramaddict_wrapper/navigation.py)
+    ├── connect()                  # Device connection with auto-detection
+    ├── launch_instagram()         # App launch with fallback
+    ├── goto_home/search/profile() # Tab navigation (coordinate-based)
+    ├── search_username()          # User search with multi-layer fallback
+    ├── check_follow_status()      # Detect current follow state
+    └── follow_user()              # Smart follow (skip if already following)
 
-Core Libraries
-    ├── GramAddict (UI navigation)
-    └── OpenAI APIs (GPT-4 Vision, GPT-4o)
+Vision Analysis (src/gramaddict_wrapper/vision_analyzer.py)
+    └── GPT-4 Vision for profile OCR and content analysis
 
-Device Layer
-    └── UIAutomator2 + ADB
+Device Layer (Pure ADB/uiautomator2)
+    ├── ADB (Android Debug Bridge)
+    └── uiautomator2 (No third-party frameworks)
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed documentation.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.9+
-- Android device with Instagram app
-- ADB installed and device connected
-- OpenAI API key
+- **Python 3.8+**
+- **Android device** with Instagram app (logged in)
+- **ADB installed** and device connected via USB debugging
+- **OpenAI API key** (for GPT-4 Vision features)
 
 ### Installation
 
 ```bash
 # Clone repository
-git clone <repository-url>
-cd "AI SNS flow"
+git clone https://github.com/moacnc/sns-automation.git
+cd sns-automation
 
 # Create virtual environment
-python3 -m venv gramaddict-env
-source gramaddict-env/bin/activate
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -69,139 +76,192 @@ cp .env.example .env
 # Edit .env and add your OPENAI_API_KEY
 ```
 
-### Usage
+### Device Setup
 
-#### 1. Profile Scraping
+```bash
+# 1. Enable USB Debugging on your Android device
+#    Settings → About Phone → Tap "Build Number" 7 times
+#    Settings → Developer Options → Enable "USB Debugging"
+
+# 2. Connect device and verify
+adb devices
+# Should show: <DEVICE_ID>    device
+
+# 3. Initialize uiautomator2 service
+python3 -m uiautomator2 init
+```
+
+### Running Tests
+
+Run tests in sequential order:
+
+```bash
+# Phase 1: Infrastructure
+python3 tests/phase1_infrastructure/test_device_connection.py
+python3 tests/phase1_infrastructure/test_instagram_launch.py
+
+# Phase 2: Navigation
+python3 tests/phase2_navigation/test_tab_navigation.py
+python3 tests/phase2_navigation/test_search_user.py
+
+# Phase 3: Follow Feature
+python3 tests/phase3_vision/test_follow_user.py
+```
+
+### Usage Examples
+
+#### 1. Basic Navigation
+
+```python
+from src.gramaddict_wrapper import InstagramNavigator
+
+# Initialize and connect
+navigator = InstagramNavigator()
+navigator.connect()
+
+# Launch Instagram
+navigator.launch_instagram()
+
+# Navigate tabs
+navigator.goto_home()
+navigator.goto_search()
+navigator.goto_profile()
+```
+
+#### 2. Search and Follow User
+
+```python
+from src.gramaddict_wrapper import InstagramNavigator
+
+navigator = InstagramNavigator()
+navigator.connect()
+
+# Search for user
+navigator.search_username("targetuser")
+
+# Check follow status
+status = navigator.check_follow_status()
+print(f"Follow status: {status}")
+# Returns: "follow", "following", "requested", or "unknown"
+
+# Follow user (skips if already following)
+success = navigator.follow_user()
+if success:
+    print("✅ Follow action completed")
+```
+
+#### 3. Profile Scraping with GPT-4 Vision
 
 ```python
 from src.gramaddict_wrapper import InstagramNavigator, ProfileScraper
 
-# Initialize
-navigator = InstagramNavigator(device_id="YOUR_DEVICE_ID")
+navigator = InstagramNavigator()
 navigator.connect()
 scraper = ProfileScraper(navigator)
 
 # Scrape profile
 profile = scraper.scrape_profile("username")
+print(f"Username: {profile['username']}")
 print(f"Followers: {profile['follower_count']}")
 print(f"Bio: {profile['bio']}")
 ```
 
-#### 2. Story Restory
+## 📊 Test Results
 
-```python
-from src.gramaddict_wrapper import InstagramNavigator, StoryRestory
+All tests passing with real Android device (Samsung SM-N981N, Android 13, 1080x2400):
 
-# Initialize
-navigator = InstagramNavigator()
-navigator.connect()
-restory = StoryRestory(navigator)
+✅ **Phase 1.1**: ADB connection
+✅ **Phase 1.2**: UIAutomator2 service
+✅ **Phase 1.3**: Instagram app launch
+✅ **Phase 2.1**: Tab navigation (Home/Search/Profile)
+✅ **Phase 2.2**: User search and profile navigation
+✅ **Phase 3.3**: Follow user with status detection
 
-# Repost stories with filtering
-result = restory.restory_from_user(
-    username="targetuser",
-    filter_inappropriate=True,
-    max_stories=5
-)
-print(f"Reposted: {result['stories_reposted']}/{result['stories_checked']}")
-```
+Screenshots saved in `tests/phase*/screenshots/`
 
-#### 3. Personalized DM
+## 🎯 Accurate Coordinates
 
-```python
-from src.gramaddict_wrapper import InstagramNavigator, DMSender
+| Element | Coordinates (x, y) | Notes |
+|---------|-------------------|-------|
+| Home Tab | (108, 2165) | Bottom navigation |
+| Search Tab | (324, 2165) | Bottom navigation |
+| Profile Tab | (972, 2165) | Bottom navigation |
+| Search Input | (530, 168) | Top search bar |
+| First Search Result | (540, 522) | First user in results |
+| Follow Button | (168, 397) | Blue button on profile |
 
-# Initialize
-navigator = InstagramNavigator()
-navigator.connect()
-dm_sender = DMSender(navigator)
+*Coordinates are for 1080x2400 resolution. Screen rotation is locked to portrait.*
 
-# Send personalized DM
-result = dm_sender.send_personalized_dm(
-    username="targetuser",
-    campaign_context="We're looking for creative collaborators...",
-    use_profile_info=True
-)
-```
+## 🔧 Configuration
 
-### Run Tests
+### Environment Variables (.env)
 
 ```bash
-source gramaddict-env/bin/activate
-python3 examples/test_new_architecture.py
+# OpenAI API
+OPENAI_API_KEY=sk-...
+
+# Database (optional)
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=instagram_automation
+DB_USER=your_user
+DB_PASSWORD=your_password
 ```
+
+### Device Configuration
+
+The navigator automatically:
+- Detects connected ADB devices
+- Locks screen rotation to portrait
+- Initializes uiautomator2 service
 
 ## 📚 Documentation
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) - Detailed architecture overview
-- [REFACTORING_PLAN.md](REFACTORING_PLAN.md) - Migration from old architecture
-- [CLEANUP_GUIDE.md](CLEANUP_GUIDE.md) - What was removed and why
-- [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) - Development guidelines
-
-## 🔑 Environment Variables
-
-Create a `.env` file:
-
-```env
-OPENAI_API_KEY=sk-...
-```
-
-## 📦 Module Overview
-
-### src/gramaddict_wrapper/
-
-| Module | Purpose |
-|--------|---------|
-| `navigation.py` | High-level Instagram navigation (home, search, profiles) |
-| `vision_analyzer.py` | GPT-4 Vision for image analysis (profiles, stories, content) |
-| `profile_scraper.py` | Profile information extraction (followers, bio, etc.) |
-| `story_restory.py` | Automated story reposting with filtering |
-| `dm_sender.py` | Personalized DM automation with GPT-4o |
-
-## 🎨 Design Principles
-
-1. **GramAddict for Navigation** - Reliable UI selectors, not coordinates
-2. **GPT Vision for Analysis** - Image understanding, OCR, content detection
-3. **GPT-4o for Generation** - Personalized text creation
-4. **Cost Efficiency** - Minimal API calls, maximum reliability
-5. **Maintainability** - Clean separation of concerns
-
-## 📊 Performance
-
-- **API Cost Reduction**: 70% vs coordinate-based approaches
-- **Reliability**: 95%+ success rate (vs 60% with coordinates)
-- **Speed**: 3x faster navigation (no GPT calls for navigation)
-- **Resolution Independent**: Works on any Android device
-
-## 🔒 Safety Features
-
-- Content appropriateness checking (violence, nudity, hate speech)
-- OpenAI Moderation API integration
-- Rate limiting and error handling
-- Session management and crash recovery
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture and design
+- [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) - Development setup and guidelines
 
 ## 🛠️ Technology Stack
 
-- **GramAddict** 3.2.12 - Instagram automation framework
-- **UIAutomator2** - Android UI automation
-- **OpenAI Python SDK** - GPT-4 Vision & GPT-4o
-- **Loguru** - Advanced logging
-- **Python 3.9+**
+- **ADB** (Android Debug Bridge) - Device control and input
+- **uiautomator2** - UI element detection and interaction
+- **OpenAI GPT-4 Vision** - Image analysis and OCR
+- **Python 3.8+** - Core language
+- **loguru** - Structured logging
+- **pytest** - Testing framework
 
-## 📝 License
+## 🔒 Safety Features
 
-[Your License]
+- ✅ **No Unfollow**: Follow function never unfollows existing follows
+- ✅ **Status Detection**: Checks follow state before action
+- ✅ **Rate Limiting**: Built-in delays to avoid Instagram limits
+- ✅ **Error Handling**: Comprehensive error handling and logging
+- ✅ **Screen Lock**: Prevents coordinate drift from rotation
+
+## 🚧 Current Limitations
+
+- Coordinates are resolution-specific (1080x2400)
+- Requires physical device (emulator not tested)
+- Instagram UI changes may require coordinate updates
+- Requires screen to stay on during automation
 
 ## 🤝 Contributing
 
-Contributions welcome! Please read [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) first.
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new features
+4. Submit a pull request
 
-## 📧 Contact
+## 📝 License
 
-[Your Contact Information]
+[Add your license here]
+
+## 🙏 Acknowledgments
+
+- Built with pure ADB and uiautomator2
+- GPT-4 Vision by OpenAI
+- Custom implementation with no third-party automation frameworks
 
 ---
 
-**Note**: This project is for educational purposes. Always respect Instagram's Terms of Service and rate limits.
-
-*Last updated: 2025-10-10*
+**Repository**: https://github.com/moacnc/sns-automation

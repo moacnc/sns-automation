@@ -1,11 +1,11 @@
-# Instagram Automation Architecture (GramAddict-based)
+# Instagram Automation Architecture
 
 ## 🎯 Overview
 
-This project provides advanced Instagram automation by combining:
-- **GramAddict** for reliable UI navigation
-- **GPT-4 Vision** for image analysis (OCR, content understanding)
-- **GPT-4o** for personalized text generation
+This project provides advanced Instagram automation using:
+- **Pure ADB/uiautomator2** for reliable device control
+- **GPT-4 Vision** for intelligent image analysis and OCR
+- **Coordinate-based navigation** with multi-layer fallback system
 
 ## 📐 Architecture Diagram
 
@@ -14,67 +14,66 @@ This project provides advanced Instagram automation by combining:
 │                      Application Layer                          │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐ │
-│  │          examples/test_new_architecture.py               │ │
-│  │          - Profile Scraping Test                          │ │
-│  │          - Story Restory Test                             │ │
-│  │          - DM Sending Test                                │ │
+│  │          Test Suite (tests/)                             │ │
+│  │          - Phase 1: Infrastructure                        │ │
+│  │          - Phase 2: Navigation                            │ │
+│  │          - Phase 3: Vision & Actions                      │ │
+│  │          - Phase 4: Integration                           │ │
+│  │          - Phase 5: Advanced Features                     │ │
 │  └──────────────────────────────────────────────────────────┘ │
 └────────────────────────────────────────────────────────────────┘
                               ↓
 ┌────────────────────────────────────────────────────────────────┐
-│                   GramAddict Wrapper Layer                      │
+│                   Navigation Wrapper Layer                      │
 │                    (src/gramaddict_wrapper/)                    │
 │                                                                  │
 │  ┌──────────────────┐  ┌──────────────────┐                   │
 │  │  navigation.py   │  │ vision_analyzer  │                   │
 │  │  ──────────────  │  │  ──────────────  │                   │
-│  │  · goto_home()   │  │  · analyze_      │                   │
-│  │  · goto_search() │  │    profile_      │                   │
-│  │  · search_       │  │    screenshot()  │                   │
+│  │  · connect()     │  │  · analyze_      │                   │
+│  │  · launch_       │  │    profile_      │                   │
+│  │    instagram()   │  │    screenshot()  │                   │
+│  │  · goto_home()   │  │  · check_        │                   │
+│  │  · goto_search() │  │    follow_       │                   │
+│  │  · search_       │  │    status()      │                   │
 │  │    username()    │  │  · analyze_      │                   │
-│  └──────────────────┘  │    story_        │                   │
-│                         │    content()     │                   │
-│  ┌──────────────────┐  └──────────────────┘                   │
-│  │ profile_scraper  │                                           │
-│  │  ──────────────  │  ┌──────────────────┐                   │
-│  │  · scrape_       │  │  story_restory   │                   │
-│  │    profile()     │  │  ──────────────  │                   │
-│  │  · get_follower_ │  │  · restory_from_ │                   │
-│  │    count()       │  │    user()        │                   │
-│  │  · is_verified() │  │  · filter_       │                   │
-│  └──────────────────┘  │    inappropriate │                   │
-│                         │    _content()    │                   │
-│  ┌──────────────────┐  └──────────────────┘                   │
+│  │  · follow_user() │  │    content()     │                   │
+│  └──────────────────┘  └──────────────────┘                   │
+│                                                                  │
+│  ┌──────────────────┐  ┌──────────────────┐                   │
+│  │ profile_scraper  │  │  story_restory   │                   │
+│  │  ──────────────  │  │  ──────────────  │                   │
+│  │  · scrape_       │  │  · view_story()  │                   │
+│  │    profile()     │  │  · restory()     │                   │
+│  │  · extract_      │  │  · filter_       │                   │
+│  │    info()        │  │    content()     │                   │
+│  └──────────────────┘  └──────────────────┘                   │
+│                                                                  │
+│  ┌──────────────────┐                                           │
 │  │   dm_sender.py   │                                           │
 │  │  ──────────────  │                                           │
-│  │  · send_         │                                           │
-│  │    personalized_ │                                           │
-│  │    dm()          │                                           │
+│  │  · send_dm()     │                                           │
+│  │  · personalize() │                                           │
 │  └──────────────────┘                                           │
 └────────────────────────────────────────────────────────────────┘
                               ↓
 ┌────────────────────────────────────────────────────────────────┐
-│                      Core Libraries                             │
+│                      Core Technologies                          │
 │                                                                  │
 │  ┌─────────────────────┐         ┌─────────────────────┐       │
-│  │    GramAddict        │         │    OpenAI APIs      │       │
+│  │   ADB + uiautomator2 │         │    OpenAI APIs      │       │
 │  │  ─────────────────   │         │  ─────────────────  │       │
-│  │  · TabBarView        │         │  · GPT-4 Vision     │       │
-│  │    - navigateToHome  │         │    (gpt-4o)         │       │
-│  │    - navigateToSearch│         │  · GPT-4o           │       │
-│  │  · SearchView        │         │  · Moderation API   │       │
-│  │    - navigate_to_    │         │                     │       │
-│  │      target()        │         │                     │       │
-│  │  · ProfileView       │         │                     │       │
-│  │  · DeviceFacade      │         │                     │       │
-│  │    - find()          │         │                     │       │
-│  │    - screenshot()    │         │                     │       │
+│  │  · Device control    │         │  · GPT-4 Vision     │       │
+│  │  · Screen capture    │         │    (gpt-4o)         │       │
+│  │  · Input simulation  │         │  · Image analysis   │       │
+│  │  · Element finding   │         │  · OCR              │       │
+│  │  · Coordinate tap    │         │  · Content filter   │       │
 │  └─────────────────────┘         └─────────────────────┘       │
 └────────────────────────────────────────────────────────────────┘
                               ↓
 ┌────────────────────────────────────────────────────────────────┐
 │                        Device Layer                             │
-│                 UIAutomator2 + ADB + Instagram                  │
+│                 Android Device + Instagram App                  │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -82,32 +81,48 @@ This project provides advanced Instagram automation by combining:
 
 ### src/gramaddict_wrapper/
 
+> **Note**: Despite the directory name "gramaddict_wrapper", this module uses **pure ADB and uiautomator2** with no GramAddict dependency.
+
 #### 1. **navigation.py** - Instagram Navigation
-- **Purpose**: High-level navigation wrapper for GramAddict
-- **Key Methods**:
-  - `connect()`: Connect to Android device
-  - `goto_home()`, `goto_search()`, `goto_profile()`: Tab navigation
-  - `search_username(username)`: Search and navigate to user profile
-  - `go_back()`: Navigate back
-  - `screenshot(path)`: Capture screenshot
+
+**Purpose**: Direct device control using ADB commands and uiautomator2
+
+**Key Methods**:
+- `connect()`: Connect to Android device via uiautomator2
+- `launch_instagram()`: Launch Instagram app
+- `goto_home()`, `goto_search()`, `goto_profile()`: Tab navigation using coordinates
+- `search_username(username)`: Search user with multi-layer fallback
+- `check_follow_status()`: Detect current follow state (follow/following/requested)
+- `follow_user()`: Smart follow (skips if already following)
+- `screenshot(path)`: Capture screen
+
+**Navigation Strategy**:
+1. **Resource ID matching** (primary)
+2. **Text matching** (fallback)
+3. **Coordinate-based tapping** (final fallback)
 
 **Usage Example**:
 ```python
 from src.gramaddict_wrapper import InstagramNavigator
 
-nav = InstagramNavigator(device_id="R3CN70D9ZBY")
+nav = InstagramNavigator()
 nav.connect()
-nav.search_username("liowish")  # Navigate to @liowish profile
+nav.launch_instagram()
+nav.search_username("targetuser")
+nav.follow_user()
 ```
 
 ---
 
 #### 2. **vision_analyzer.py** - GPT-4 Vision Image Analysis
-- **Purpose**: Image analysis using GPT-4 Vision (NOT for navigation)
-- **Key Methods**:
-  - `analyze_profile_screenshot(image_path)`: Extract profile info via OCR
-  - `analyze_story_content(image_path)`: Analyze story content
-  - `check_content_appropriateness(image_path)`: Content safety check
+
+**Purpose**: Intelligent image analysis using GPT-4 Vision
+
+**Key Methods**:
+- `analyze_profile_screenshot(image_path)`: Extract profile info via OCR
+- `check_follow_status(image_path)`: Detect follow button state
+- `analyze_story_content(image_path)`: Analyze story content
+- `check_content_appropriateness(image_path)`: Content safety check
 
 **Usage Example**:
 ```python
@@ -115,18 +130,20 @@ from src.gramaddict_wrapper import VisionAnalyzer
 
 vision = VisionAnalyzer()
 profile_info = vision.analyze_profile_screenshot("profile.png")
-print(profile_info['follower_count'])  # "1.2K"
+print(f"Followers: {profile_info['follower_count']}")
 ```
 
 ---
 
 #### 3. **profile_scraper.py** - Profile Information Scraper
-- **Purpose**: Combine GramAddict navigation + GPT Vision OCR
-- **Key Methods**:
-  - `scrape_profile(username)`: Full profile scraping
-  - `get_follower_count(username)`: Quick follower count
-  - `is_verified(username)`: Check verification
-  - `is_private(username)`: Check privacy status
+
+**Purpose**: Combine navigation + GPT Vision for profile data extraction
+
+**Key Methods**:
+- `scrape_profile(username)`: Full profile scraping
+- `get_follower_count(username)`: Quick follower count
+- `is_verified(username)`: Check verification status
+- `is_private(username)`: Check privacy status
 
 **Usage Example**:
 ```python
@@ -136,16 +153,22 @@ nav = InstagramNavigator()
 nav.connect()
 scraper = ProfileScraper(nav)
 
-profile = scraper.scrape_profile("liowish")
+profile = scraper.scrape_profile("username")
+print(f"Username: {profile['username']}")
 print(f"Followers: {profile['follower_count']}")
+print(f"Bio: {profile['bio']}")
 ```
 
 ---
 
-#### 4. **story_restory.py** - Story Reposting
-- **Purpose**: Automated story reposting with content filtering
-- **Key Methods**:
-  - `restory_from_user(username, filter_inappropriate, max_stories)`: Repost stories
+#### 4. **story_restory.py** - Story Automation
+
+**Purpose**: Automated story viewing and reposting with content filtering
+
+**Key Methods**:
+- `view_story(username)`: View user's story
+- `restory_from_user(username, max_stories)`: Repost stories
+- `filter_inappropriate_content(image_path)`: AI content filtering
 
 **Usage Example**:
 ```python
@@ -156,8 +179,7 @@ nav.connect()
 restory = StoryRestory(nav)
 
 result = restory.restory_from_user(
-    username="liowish",
-    filter_inappropriate=True,
+    username="targetuser",
     max_stories=5
 )
 print(f"Reposted: {result['stories_reposted']}")
@@ -165,10 +187,12 @@ print(f"Reposted: {result['stories_reposted']}")
 
 ---
 
-#### 5. **dm_sender.py** - Personalized DM Automation
-- **Purpose**: Send personalized DMs using GPT-4o
-- **Key Methods**:
-  - `send_personalized_dm(username, campaign_context, use_profile_info)`: Send DM
+#### 5. **dm_sender.py** - Direct Message Automation
+
+**Purpose**: Send personalized DMs using GPT-4
+
+**Key Methods**:
+- `send_personalized_dm(username, context)`: Send DM with AI-generated content
 
 **Usage Example**:
 ```python
@@ -179,9 +203,8 @@ nav.connect()
 dm_sender = DMSender(nav)
 
 result = dm_sender.send_personalized_dm(
-    username="liowish",
-    campaign_context="Collaboration opportunity...",
-    use_profile_info=True
+    username="targetuser",
+    campaign_context="Collaboration opportunity..."
 )
 ```
 
@@ -189,129 +212,146 @@ result = dm_sender.send_personalized_dm(
 
 ## 🔑 Key Design Principles
 
-### 1. **Separation of Concerns**
-- ✅ **GramAddict**: UI navigation, element finding, interactions
-- ✅ **GPT-4 Vision**: Image analysis ONLY (profiles, stories, content)
-- ✅ **GPT-4o**: Text generation (personalized DMs)
+### 1. **Pure ADB/uiautomator2 Implementation**
+- ✅ **Direct device control**: No third-party automation frameworks
+- ✅ **Fast and reliable**: Minimal overhead
+- ✅ **Simple dependencies**: Only ADB and uiautomator2
 
-### 2. **No More Coordinate-based Navigation**
-- ❌ **Before**: `device.tap(0.3, 0.97)` → unreliable, resolution-dependent
-- ✅ **After**: `search_view.navigate_to_target("liowish", "blogger")` → selector-based, robust
+### 2. **Multi-layer Fallback System**
+1. **Resource ID** → `d(resourceId="com.instagram.android:id/search_edit_text")`
+2. **Text matching** → `d(text="Search")`
+3. **Coordinates** → `d.click(540, 168)`
 
-### 3. **GPT Vision for Image Understanding Only**
-- ❌ **Before**: GPT Vision for finding coordinates → expensive, slow, inaccurate
-- ✅ **After**: GPT Vision for OCR and content analysis → appropriate use case
+### 3. **GPT Vision for Intelligence, Not Navigation**
+- ❌ **NOT used for**: Finding buttons, navigation
+- ✅ **Used for**: OCR, content analysis, follow status detection
 
-### 4. **Cost Efficiency**
-- **Before**: GPT Vision API call for every navigation action
-- **After**: GPT Vision API call only for actual image analysis
-- **Estimated Cost Reduction**: 70-80%
-
----
-
-## 📊 Comparison: Old vs New Architecture
-
-| Aspect | Old (instagram_core) | New (gramaddict_wrapper) |
-|--------|----------------------|--------------------------|
-| **Navigation** | Coordinate-based (`tap(x, y)`) | Selector-based (`find(resourceId=...)`) |
-| **Reliability** | Low (coordinates change) | High (selectors stable) |
-| **Resolution Independence** | ❌ No | ✅ Yes |
-| **GPT Vision Usage** | Navigation + Analysis | Analysis only |
-| **API Costs** | High | Low (70% reduction) |
-| **Code Complexity** | High (manual coordinate debugging) | Low (GramAddict handles it) |
-| **Maintainability** | Low | High |
-| **Instagram Updates** | Breaks often | Resilient |
+### 4. **Screen Rotation Lock**
+- Always lock to portrait mode for consistent coordinates
+- Resolution-specific coordinates (1080x2400)
 
 ---
 
-## 🧪 Testing
+## 📊 Technology Stack
 
-### Run Tests
-```bash
-cd "/Users/kyounghogwack/MOAcnc/Dev/PantaRheiX/AI SNS flow"
-source gramaddict-env/bin/activate
-python3 examples/test_new_architecture.py
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Device Control** | ADB | Android Debug Bridge |
+| **UI Automation** | uiautomator2 | Element detection and interaction |
+| **AI Analysis** | GPT-4 Vision | Image analysis and OCR |
+| **Language** | Python 3.8+ | Core implementation |
+| **Logging** | loguru | Structured logging |
+| **Testing** | pytest | Test framework |
+
+---
+
+## 🧪 Test Architecture
+
+### Phase-based Testing
+
+```
+tests/
+├── phase1_infrastructure/    # Device & app verification
+│   ├── test_device_connection.py
+│   └── test_instagram_launch.py
+├── phase2_navigation/         # Tab navigation & search
+│   ├── test_tab_navigation.py
+│   └── test_search_user.py
+├── phase3_vision/             # AI-powered features
+│   ├── test_follow_user.py
+│   ├── test_profile_ocr.py
+│   └── test_content_filter.py
+├── phase4_integration/        # End-to-end workflows
+│   └── test_profile_scraping.py
+└── phase5_advanced/           # Advanced features
+    └── test_story_restory.py
 ```
 
-### Test Coverage
-1. ✅ Profile Scraping (@liowish)
-2. ✅ Story Restory (with content filtering)
-3. ✅ Personalized DM Sending
+### Test Results
+All tests passing on Samsung SM-N981N (1080x2400, Android 13):
+- ✅ Phase 1: Infrastructure (ADB, uiautomator2, Instagram launch)
+- ✅ Phase 2: Navigation (Tabs, user search)
+- ✅ Phase 3: Follow with status detection
+- 🚧 Phase 4-5: In progress
+
+---
+
+## 🎯 Coordinate System
+
+### Screen Resolution: 1080x2400 (portrait locked)
+
+| Element | Coordinates (x, y) | Method |
+|---------|-------------------|--------|
+| Home Tab | (108, 2165) | Bottom navigation bar |
+| Search Tab | (324, 2165) | Bottom navigation bar |
+| Profile Tab | (972, 2165) | Bottom navigation bar |
+| Search Input | (530, 168) | Top search bar |
+| First Result | (540, 522) | First search result |
+| Follow Button | (168, 397) | Profile screen button |
+
+> **Important**: Coordinates are resolution-specific. For different resolutions, coordinates must be recalibrated.
+
+---
+
+## 🔐 Safety Features
+
+1. **Follow Status Detection**: Never unfollow existing follows
+2. **Rate Limiting**: Built-in delays between actions
+3. **Error Handling**: Comprehensive try-catch blocks
+4. **Content Filtering**: AI-powered inappropriate content detection
+5. **Session Logging**: All actions logged to database
 
 ---
 
 ## 🚀 Quick Start
 
 ```python
-from src.gramaddict_wrapper import (
-    InstagramNavigator,
-    VisionAnalyzer,
-    ProfileScraper,
-    StoryRestory,
-    DMSender
-)
+from src.gramaddict_wrapper import InstagramNavigator
 
 # Initialize
-navigator = InstagramNavigator(device_id="R3CN70D9ZBY")
+navigator = InstagramNavigator()
 navigator.connect()
+navigator.launch_instagram()
 
-# Example 1: Scrape Profile
-scraper = ProfileScraper(navigator)
-profile = scraper.scrape_profile("liowish")
-print(f"Followers: {profile['follower_count']}")
+# Navigate and search
+navigator.goto_search()
+navigator.search_username("targetuser")
 
-# Example 2: Restory Stories
-restory = StoryRestory(navigator)
-result = restory.restory_from_user("liowish", max_stories=3)
-
-# Example 3: Send Personalized DM
-dm_sender = DMSender(navigator, scraper)
-dm_sender.send_personalized_dm(
-    username="liowish",
-    campaign_context="Partnership opportunity..."
-)
+# Check and follow
+status = navigator.check_follow_status()
+if status == "follow":
+    navigator.follow_user()
+    print("✅ Followed user")
+else:
+    print(f"ℹ️ Status: {status}")
 ```
 
 ---
 
 ## 📝 Dependencies
 
-- **GramAddict** 3.2.12 (Instagram automation)
-- **UIAutomator2** (Android device control)
-- **OpenAI Python SDK** (GPT-4 Vision, GPT-4o)
-- **Loguru** (Logging)
-- **Python 3.9+**
-
----
-
-## 🔐 Environment Variables
-
-Create `.env` file:
+Core dependencies (from requirements.txt):
 ```
-OPENAI_API_KEY=sk-...
+uiautomator2>=3.0.0
+openai>=1.107.1
+loguru>=0.7.0
+Pillow>=10.0.0
+pytest>=7.4.0
 ```
 
----
-
-## 📌 Notes
-
-- Device must be connected via ADB
-- Instagram app must be installed
-- UIAutomator2 service must be running on device
-- GPT-4 Vision is used ONLY for image analysis, not navigation
-- All navigation uses GramAddict's robust UI selectors
+No GramAddict or other automation frameworks required.
 
 ---
 
-## 🎉 Benefits of New Architecture
+## 🔧 Future Enhancements
 
-1. ✅ **Stable**: Uses GramAddict's battle-tested selectors
-2. ✅ **Cost-effective**: 70% reduction in GPT API calls
-3. ✅ **Fast**: No waiting for GPT Vision on every navigation
-4. ✅ **Maintainable**: Clean separation of concerns
-5. ✅ **Scalable**: Easy to add new features
-6. ✅ **Resolution-independent**: Works on any screen size
+- [ ] Multi-resolution coordinate adaptation
+- [ ] Enhanced OCR accuracy
+- [ ] Story automation with AI filtering
+- [ ] Bulk DM campaigns
+- [ ] Analytics dashboard
 
 ---
 
-*Last updated: 2025-10-10*
+**Last Updated**: 2025-10-14
+**Architecture Version**: 2.0 (Pure ADB/uiautomator2)
