@@ -48,6 +48,7 @@ class GeminiComputerUseAgent:
         self.browser: Optional[Browser] = None
         self.context = None
         self.page: Optional[Page] = None
+        self.user_data_dir = None  # Track temp directory for cleanup
 
         # Session state
         self.session_history: List[Dict[str, Any]] = []
@@ -71,17 +72,19 @@ class GeminiComputerUseAgent:
             logger.info(f"Starting browser (headless={headless})...")
             self.playwright = sync_playwright().start()
 
-            # Use persistent context to maintain cookies/sessions and avoid CAPTCHA
+            # Use unique temporary directory for each session to avoid cache pollution
+            # This prevents bot detection from accumulated browsing history
             import tempfile
-            user_data_dir = Path(tempfile.gettempdir()) / "playwright_gemini_profile"
-            user_data_dir.mkdir(exist_ok=True)
-            logger.info(f"📁 User data directory: {user_data_dir}")
+            import uuid
+            session_id = str(uuid.uuid4())[:8]  # Short unique ID
+            self.user_data_dir = Path(tempfile.mkdtemp(prefix=f"playwright_{session_id}_"))
+            logger.info(f"📁 User data directory (unique session): {self.user_data_dir}")
 
             # Launch persistent context (better for avoiding CAPTCHA)
             try:
                 # Try Chrome first (more stable)
                 self.context = self.playwright.chromium.launch_persistent_context(
-                    str(user_data_dir),
+                    str(self.user_data_dir),
                     channel='chrome',
                     headless=headless,
                     viewport={'width': 1440, 'height': 900},
@@ -96,7 +99,7 @@ class GeminiComputerUseAgent:
                 logger.warning(f"Chrome not available, using Chromium: {e}")
                 # Fallback to Chromium
                 self.context = self.playwright.chromium.launch_persistent_context(
-                    str(user_data_dir),
+                    str(self.user_data_dir),
                     headless=headless,
                     viewport={'width': 1440, 'height': 900},
                     user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -174,32 +177,17 @@ class GeminiComputerUseAgent:
                 except Exception as e:
                     logger.warning(f"Error stopping playwright: {e}")
 
-            # CRITICAL: Longer delay to ensure profile lock is released
-            # Persistent context needs more time to clean up SingletonLock file
-            import time
-            import tempfile
-            time.sleep(2.0)  # Increased from 0.5s to 2.0s
-
-            # Additional check: verify lock file is released
-            profile_dir = Path(tempfile.gettempdir()) / "playwright_gemini_profile"
-            lock_file = profile_dir / "SingletonLock"
-
-            # Wait up to 3 more seconds for lock to be released
-            if lock_file.exists():
-                for i in range(6):
-                    if not lock_file.exists():
-                        logger.debug("✓ Profile lock released")
-                        break
-                    time.sleep(0.5)
-                    logger.debug(f"⏳ Waiting for profile lock release... ({i+1}/6)")
-                else:
-                    # Force remove lock file if still exists
-                    if lock_file.exists():
-                        logger.warning("⚠️ Force removing stale lock file")
-                        try:
-                            lock_file.unlink()
-                        except:
-                            pass
+            # Clean up temporary user data directory
+            if self.user_data_dir and self.user_data_dir.exists():
+                try:
+                    import shutil
+                    import time
+                    time.sleep(1.0)  # Brief delay to ensure files are released
+                    shutil.rmtree(self.user_data_dir, ignore_errors=True)
+                    logger.info(f"🗑️  Deleted temporary profile: {self.user_data_dir}")
+                    self.user_data_dir = None
+                except Exception as e:
+                    logger.warning(f"⚠️  Could not delete temp directory: {e}")
 
             logger.info("✓ Browser closed and cleaned up")
         except Exception as e:
