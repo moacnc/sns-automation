@@ -353,6 +353,14 @@ def execute_task():
             import gc
             gc.collect()
 
+            # ALWAYS close browser after task completion
+            logger.info("🧹 Closing browser after task completion...")
+            try:
+                agent_instance.close_browser()
+                logger.info("✅ Browser closed successfully")
+            except Exception as e:
+                logger.warning(f"⚠️  Error closing browser: {e}")
+
         # Calculate execution time
         execution_time = time.time() - current_task['start_time']
 
@@ -376,9 +384,15 @@ def execute_task():
 
     except ValueError as e:
         logger.error(f"❌ Validation error: {e}")
-        # Clear callback on error
-        if agent:
-            agent.progress_callback = None
+        # Clear callback and close browser on error
+        try:
+            agent_instance = get_agent()
+            agent_instance.progress_callback = None
+            agent_instance.close_browser()
+            logger.info("✅ Browser closed after validation error")
+        except:
+            pass
+
         current_task = {
             'status': 'error',
             'prompt': current_task.get('prompt'),
@@ -396,10 +410,12 @@ def execute_task():
         error_trace = traceback.format_exc()
         logger.error(f"Traceback:\n{error_trace}")
 
-        # Clear callback on error
+        # Clear callback and close browser on error
         try:
             agent_instance = get_agent()
             agent_instance.progress_callback = None
+            agent_instance.close_browser()
+            logger.info("✅ Browser closed after execution error")
         except:
             pass
 

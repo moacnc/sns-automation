@@ -112,6 +112,14 @@ class GeminiComputerUseAgent:
             self.page = self.context.pages[0] if self.context.pages else self.context.new_page()
             self.browser = None  # Not used with persistent context
 
+            # Auto-dismiss JavaScript dialogs (alert, confirm, prompt)
+            def handle_dialog(dialog):
+                logger.info(f"🚨 Auto-dismissing dialog: {dialog.type} - {dialog.message}")
+                dialog.dismiss()
+
+            self.page.on("dialog", handle_dialog)
+            logger.info("✓ Auto-dialog handler registered (alert/confirm/prompt will be auto-dismissed)")
+
             # Navigate to Google homepage on startup
             try:
                 logger.info("🌐 Navigating to Google homepage...")
@@ -358,73 +366,108 @@ class GeminiComputerUseAgent:
 
         # === ROUND 0: Full structured prompt ===
         if round_num == 0:
-            return f"""You are a browser automation agent. Complete this task with minimal steps and verifiable evidence.
+            return f"""당신은 브라우저 자동화 에이전트입니다. 최소한의 단계로 작업을 완료하고 검증 가능한 증거를 제공하세요.
 
-## TASK
+## 작업
 {task}
 
-## Core Loop (max {max_steps} steps)
-Each step: PLAN (1 line) → ACT (1 action) → OBSERVE (brief) → CHECK stopping condition
+## 핵심 루프 (최대 {max_steps} 단계)
+각 단계: 계획 (1줄) → 실행 (1개 액션) → 관찰 (간략히) → 종료 조건 확인
 
-## Navigation Strategy
-1. **Find before scroll**: Use in-page search/TOC/tabs first
-2. **Batch scrolling**: If needed, scroll 2-3 times in succession (max 12 total)
-3. **Smart waiting**: Wait for network idle + key elements after navigation
-4. **Selector priority**: role/aria > test-id > stable CSS > XPath
+## 탐색 전략
+1. **스크롤 전에 찾기**: 먼저 페이지 내 검색/목차/탭 사용
+2. **일괄 스크롤**: 필요시 2-3회 연속 스크롤 (최대 12회)
+3. **스마트 대기**: 네비게이션 후 네트워크 유휴 + 주요 요소 대기
+4. **선택자 우선순위**: role/aria > test-id > 안정적인 CSS > XPath
 
-## Interaction Rules
-- Scroll element into view before clicking
-- For long pages: scroll MULTIPLE times in succession, don't give up early
-- For pagination: scan up to 3 pages unless task requires more
-- NO logins/forms/captcha bypass
+## 상호작용 규칙
+- 클릭 전에 요소를 화면에 스크롤
+- 긴 페이지의 경우: 여러 번 연속 스크롤, 일찍 포기하지 말 것
+- 페이지네이션: 작업에서 더 필요하지 않으면 최대 3페이지까지 스캔
+- 로그인/폼/캡챠 우회 금지
 
-## Output Requirements
-- Explain your thinking before each action
-- Describe what you see on screen
-- Explain why you're taking each action
-- After action, briefly describe what happened
-- When task complete, provide clear final answer with "Final Answer:" prefix
+## 출력 요구사항 (매우 중요!)
+**모든 응답은 반드시 한국어로 작성하세요.**
 
-## START
-Current URL: {current_url}
-Current page shown in screenshot below.
+**매 단계마다 이 순서를 반드시 따르세요:**
+1. **먼저 한국어 텍스트로 설명**:
+   - 화면에 보이는 것
+   - 현재 상황 분석
+   - 다음에 할 액션과 그 이유
 
-Provide your first 1-line PLAN:"""
+2. **그 다음 function call로 액션 실행**
+
+3. **액션 실행 후**: 다음 라운드에서 결과를 한국어로 설명
+
+**텍스트 설명 예시:**
+"현재 네이버 블로그 검색 결과 페이지가 보입니다. 하단에 더 많은 게시물이 있을 것 같아 스크롤을 내리겠습니다."
+"링크를 클릭했는데 아직 페이지가 변경되지 않았습니다. 조금 더 기다려보겠습니다."
+"화면에 알림창(alert)이 떠 있어서 스크롤이 작동하지 않는 것 같습니다."
+
+**중요 - 팝업/알림 처리 (필수):**
+- JavaScript alert/confirm/prompt는 자동으로 닫힙니다
+- HTML modal/popup이 화면에 보이면:
+  1. "팝업이 보입니다. 닫기 버튼을 클릭하겠습니다" 라고 한국어로 설명
+  2. 닫기 버튼 (X, 닫기, 확인, Close 등)을 클릭하여 팝업 닫기
+  3. 팝업을 닫은 후 원래 작업 계속
+- 스크롤이 2-3회 연속 작동하지 않으면 화면에 팝업/overlay가 있는지 확인하고 닫기
+
+작업 완료 시 "최종 답변:"으로 시작하는 명확한 답변 제공
+
+## 시작
+현재 URL: {current_url}
+현재 페이지는 아래 스크린샷에 표시됩니다.
+
+**첫 번째 응답 형식:**
+1. 먼저 한국어로 화면 분석과 계획 설명
+2. 그 다음 첫 번째 액션 실행"""
 
         # === ROUNDS 1-23: Lightweight continuation ===
         elif round_num < max_steps - 2:
-            reminder = f"""Continue task: {task}
+            reminder = f"""작업 계속: {task}
 
-REMINDERS (Critical):
-- Scroll 2-3 times in succession for long pages - don't give up early
-- Check: do you have enough evidence for final answer?
-- Progress: Step {round_num + 1}/{max_steps}
+**중요 - 응답 형식:**
+1. 먼저 한국어로 이전 액션의 결과와 현재 화면 분석
+2. 그 다음 다음 액션 계획 설명
+3. 마지막으로 function call 실행
+
+알림 (중요):
+- 긴 페이지의 경우 2-3회 연속 스크롤 - 일찍 포기하지 말 것
+- 확인: 최종 답변을 위한 충분한 증거가 있는가?
+- 진행 상황: {round_num + 1}/{max_steps} 단계
 """
 
             # Add specific warnings based on context
             if scroll_count > 5:
-                reminder += "⚠️  Many scrolls with no progress? Try different strategy (search/tabs)\n"
+                reminder += "\n⚠️ **경고**: 여러 번 스크롤했는데 진전이 없습니다!\n"
+                reminder += "**즉시 다음 확인:**\n"
+                reminder += "1. 화면에 팝업, 알림창, modal, overlay가 보이는지 확인\n"
+                reminder += "2. 보이면 \"팝업이 보입니다. 닫기 버튼 클릭하겠습니다\"라고 설명 후 닫기 버튼 클릭\n"
+                reminder += "3. 팝업이 없으면 다른 전략 시도 (페이지 내 검색/탭 전환)\n"
 
             if round_num > 10 and round_num % 5 == 0:
-                reminder += f"⚠️  {round_num + 1} steps taken - consider if you have enough info to answer\n"
+                reminder += f"\n⚠️  {round_num + 1} 단계 수행됨 - 답변할 충분한 정보가 있는지 고려하세요\n"
 
-            reminder += f"\nCurrent URL: {current_url}\n\nNext 1-line PLAN (or provide 'Final Answer: ...' if complete):"
+            reminder += f"\n현재 URL: {current_url}\n"
+            reminder += "\n**응답 예시:**\n"
+            reminder += "\"이전 스크롤로 페이지 하단에 도달했습니다. 다음 페이지 버튼을 클릭하겠습니다.\"\n"
+            reminder += "\n완료되었으면 '최종 답변: ...' 제공"
 
             return reminder
 
         # === ROUNDS 24-25: Forced completion ===
         else:
-            return f"""URGENT: Approaching max steps ({round_num + 1}/{max_steps})
+            return f"""긴급: 최대 단계 도달 ({round_num + 1}/{max_steps})
 
-Task: {task}
-Current URL: {current_url}
+작업: {task}
+현재 URL: {current_url}
 
-You MUST provide final answer now with what you've gathered.
+지금 수집한 정보로 최종 답변을 제공해야 합니다.
 
-Respond with:
-Final Answer: <your answer based on evidence collected>
+다음 형식으로 응답하세요:
+최종 답변: <수집한 증거를 바탕으로 한 답변>
 
-If you need 1-2 more actions, state them clearly, but prepare to conclude."""
+1-2개의 추가 액션이 필요하면 명확히 명시하되, 결론을 준비하세요."""
 
     def _execute_function_call(self, function_call) -> bool:
         """
