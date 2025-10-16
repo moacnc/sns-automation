@@ -18,7 +18,6 @@ import signal
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
-from flask_session import Session
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv
 from loguru import logger
@@ -68,8 +67,8 @@ app = Flask(__name__,
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY') or os.urandom(24)
 
 # Session configuration for Cloud Run (client-side secure cookies)
-# Cloud Run is stateless, so filesystem sessions don't work across instances
-app.config['SESSION_TYPE'] = 'null'  # Use Flask's default secure cookie sessions
+# Cloud Run is stateless, so we use Flask's default secure cookie sessions
+# instead of filesystem/redis sessions that don't work across instances
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
 
@@ -79,8 +78,8 @@ app.config['SESSION_COOKIE_SECURE'] = is_production  # HTTPS only in production
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent XSS
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
 
-# Initialize Flask-Session (not needed for cookie-based sessions, but kept for compatibility)
-Session(app)
+# Note: We don't use Flask-Session extension for Cloud Run
+# Flask's built-in session (secure cookies) is sufficient and works across instances
 
 CORS(app)
 
