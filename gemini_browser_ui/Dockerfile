@@ -68,4 +68,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8080/api/health', timeout=5)"
 
 # Run the application with gunicorn (production WSGI server)
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "4", "--timeout", "300", "--access-logfile", "-", "--error-logfile", "-", "run:app"]
+# NOTE: Using single worker to maintain shared state for current_task (realtime_messages)
+# Multiple workers would not share memory, breaking real-time progress updates
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "8", "--timeout", "600", "--access-logfile", "-", "--error-logfile", "-", "--worker-class", "sync", "run:app"]
