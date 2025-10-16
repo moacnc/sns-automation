@@ -22,18 +22,27 @@ echo -e "${BLUE}  MOA Computer Use - Cloud Run Deployment${NC}"
 echo -e "${BLUE}============================================${NC}"
 echo ""
 
-# Check if gcloud is installed
-echo -e "${YELLOW}[1/3] Checking gcloud CLI...${NC}"
+# Check if required tools are installed
+echo -e "${YELLOW}[1/5] Checking prerequisites...${NC}"
+
 if ! command -v gcloud &> /dev/null; then
     echo -e "${RED}❌ gcloud CLI is not installed${NC}"
     echo "Install from: https://cloud.google.com/sdk/docs/install"
     exit 1
 fi
+
+if ! command -v docker &> /dev/null; then
+    echo -e "${RED}❌ Docker is not installed${NC}"
+    echo "Install from: https://docs.docker.com/get-docker/"
+    exit 1
+fi
+
 echo -e "${GREEN}✅ gcloud CLI found${NC}"
+echo -e "${GREEN}✅ Docker found${NC}"
 echo ""
 
 # Set GCP project
-echo -e "${YELLOW}[2/3] Setting GCP project...${NC}"
+echo -e "${YELLOW}[2/5] Setting GCP project...${NC}"
 gcloud config set project ${PROJECT_ID}
 echo -e "${GREEN}✅ Project set to: ${PROJECT_ID}${NC}"
 echo ""
@@ -98,15 +107,44 @@ else
 fi
 echo ""
 
-# Deploy to Cloud Run with automatic build
-# This uses Cloud Build automatically - no separate docker build needed!
-echo -e "${YELLOW}[3/3] Building and deploying to Cloud Run...${NC}"
-echo -e "${BLUE}⏱️  This will take 2-4 minutes (automatic build + deploy)${NC}"
+# Build Docker image locally (faster with caching)
+echo -e "${YELLOW}[3/5] Building Docker image locally...${NC}"
+echo -e "${BLUE}⏱️  Using local Docker cache (30s-2min depending on changes)${NC}"
+echo ""
+
+IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
+docker build -t ${IMAGE_NAME} .
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Docker build failed${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ Docker image built: ${IMAGE_NAME}${NC}"
+echo ""
+
+# Configure Docker for GCR
+echo -e "${YELLOW}[4/5] Pushing image to Google Container Registry...${NC}"
+gcloud auth configure-docker gcr.io --quiet
+
+docker push ${IMAGE_NAME}
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Docker push failed${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ Image pushed to GCR${NC}"
+echo ""
+
+# Deploy to Cloud Run
+echo -e "${YELLOW}[5/5] Deploying to Cloud Run...${NC}"
 echo ""
 
 gcloud run deploy ${SERVICE_NAME} \
-    --source=. \
+    --image=${IMAGE_NAME} \
     --region=${REGION} \
+    --platform=managed \
     --allow-unauthenticated \
     --memory=2Gi \
     --cpu=2 \
