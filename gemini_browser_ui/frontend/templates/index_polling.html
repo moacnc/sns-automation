@@ -441,6 +441,9 @@
             stopBtn.style.display = 'inline-block';
             lastMessageCount = 0;  // Reset message counter
 
+            // Clear previous messages for new request
+            chatMessages.innerHTML = '';
+
             // Add user message
             addMessage('user', prompt);
 
