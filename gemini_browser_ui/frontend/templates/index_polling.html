@@ -56,26 +56,46 @@
             background: var(--bg-hover);
         }
 
-        .stop-button {
-            padding: 6px 12px;
+        .button-group {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .btn-stop {
+            flex-shrink: 0;
+            padding: 12px 24px;
             background-color: #f85149;
             color: white;
             border: none;
-            border-radius: 6px;
-            font-size: 13px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            margin-left: 8px;
-            display: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            height: fit-content;
         }
 
-        .stop-button:hover {
+        .btn-stop:hover:not(:disabled) {
             background-color: #e0423f;
+            transform: translateY(-1px);
         }
 
-        .stop-button:disabled {
+        .btn-stop:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-stop:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        .stop-icon {
+            font-size: 16px;
         }
 
         /* Real-time message styles */
@@ -179,7 +199,6 @@
                         <span class="status-dot" id="statusDot"></span>
                         <span id="statusLabel">Initializing...</span>
                         <span id="executingBadge" class="executing-badge" style="display: none;">Executing...</span>
-                        <button id="stopBtn" class="stop-button" onclick="stopTask()">🛑 Stop</button>
                     </div>
                     <!-- User Profile -->
                     <div id="userProfile" class="user-profile" style="display: none;">
@@ -214,10 +233,16 @@
                         rows="3"
                         disabled
                     ></textarea>
-                    <button id="sendBtn" class="btn-send" disabled onclick="executeTask()">
-                        <span class="send-icon">➤</span>
-                        <span class="send-text">Send</span>
-                    </button>
+                    <div class="button-group">
+                        <button id="sendBtn" class="btn-send" disabled onclick="executeTask()">
+                            <span class="send-icon">➤</span>
+                            <span class="send-text">Send</span>
+                        </button>
+                        <button id="stopBtn" class="btn-stop" style="display: none;" onclick="stopTask()">
+                            <span class="stop-icon">🛑</span>
+                            <span class="stop-text">Stop</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
