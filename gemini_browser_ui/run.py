@@ -162,8 +162,16 @@ def auth_google():
 def auth_google_callback():
     """Google OAuth callback"""
     try:
-        # Get access token
-        token = google.authorize_access_token()
+        # Use environment variable for redirect URI (must match authorize_redirect)
+        redirect_uri = os.getenv('OAUTH_REDIRECT_URI')
+        if not redirect_uri:
+            # Fallback to dynamic URL generation for local development
+            redirect_uri = url_for('auth_google_callback', _external=True)
+
+        logger.info(f"🔐 OAuth callback redirect URI: {redirect_uri}")
+
+        # Get access token with explicit redirect_uri
+        token = google.authorize_access_token(redirect_uri=redirect_uri)
 
         # Get user info
         user_info = token.get('userinfo')
