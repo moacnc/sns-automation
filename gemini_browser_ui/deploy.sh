@@ -74,6 +74,13 @@ if [ -f "../.env" ]; then
         fi
     fi
 
+    if grep -q "OAUTH_REDIRECT_URI" ../.env; then
+        OAUTH_URI=$(grep "OAUTH_REDIRECT_URI" ../.env | tail -1 | cut -d '=' -f2 | tr -d '\r' | xargs)
+        if [ ! -z "$OAUTH_URI" ]; then
+            ENV_VARS="${ENV_VARS}OAUTH_REDIRECT_URI=${OAUTH_URI},"
+        fi
+    fi
+
     # Add required Cloud Run environment variables
     ENV_VARS="${ENV_VARS}HEADLESS=true,"
     ENV_VARS="${ENV_VARS}ENVIRONMENT=production"
