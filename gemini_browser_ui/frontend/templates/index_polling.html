@@ -172,6 +172,37 @@
                 display: none;
             }
         }
+
+        /* MOA AI Button Styles */
+        .btn-moa-ai {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            margin-right: 16px;
+        }
+
+        .btn-moa-ai:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-moa-ai:active {
+            transform: translateY(0);
+        }
+
+        .moa-ai-icon {
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -195,6 +226,10 @@
             <div class="chat-header">
                 <h1>🤖 MOA Computer Use</h1>
                 <div class="browser-controls">
+                    <button class="btn-moa-ai" onclick="window.location.href='/moa-ai'">
+                        <span class="moa-ai-icon">🧠</span>
+                        <span class="moa-ai-text">MOA AI</span>
+                    </button>
                     <div id="browserStatus" class="browser-status">
                         <span class="status-dot" id="statusDot"></span>
                         <span id="statusLabel">Initializing...</span>

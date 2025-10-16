@@ -67,13 +67,19 @@ app = Flask(__name__,
             static_folder='frontend/static')
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY') or os.urandom(24)
 
-# Session configuration
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_FILE_DIR'] = '/tmp/flask_session'
+# Session configuration for Cloud Run (client-side secure cookies)
+# Cloud Run is stateless, so filesystem sessions don't work across instances
+app.config['SESSION_TYPE'] = 'null'  # Use Flask's default secure cookie sessions
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
 
-# Initialize Flask-Session
+# Security settings for production (Cloud Run uses HTTPS)
+is_production = os.getenv('ENVIRONMENT', 'development') == 'production'
+app.config['SESSION_COOKIE_SECURE'] = is_production  # HTTPS only in production
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent XSS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
+
+# Initialize Flask-Session (not needed for cookie-based sessions, but kept for compatibility)
 Session(app)
 
 CORS(app)
@@ -204,6 +210,21 @@ def logout():
         logger.info(f"👋 User logged out: {session['user'].get('email')}")
         session.pop('user', None)
     return redirect(url_for('login'))
+
+
+@app.route('/moa-architecture')
+def moa_architecture():
+    """MOA AI Architecture page - require login"""
+    # Check if user is logged in
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    response = app.make_response(render_template('moa_ai_architecture.html'))
+    # Prevent caching to avoid loading old versions
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 @app.route('/api/user')
