@@ -110,10 +110,11 @@ echo ""
 # Build Docker image locally (faster with caching)
 echo -e "${YELLOW}[3/5] Building Docker image locally...${NC}"
 echo -e "${BLUE}⏱️  Using local Docker cache (30s-2min depending on changes)${NC}"
+echo -e "${BLUE}🔧 Building for linux/amd64 platform (Cloud Run compatible)${NC}"
 echo ""
 
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
-docker build -t ${IMAGE_NAME} .
+docker build --platform linux/amd64 -t ${IMAGE_NAME} .
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Docker build failed${NC}"
