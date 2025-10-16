@@ -148,7 +148,13 @@ def login():
 @app.route('/auth/google')
 def auth_google():
     """Redirect to Google OAuth"""
-    redirect_uri = url_for('auth_google_callback', _external=True)
+    # Use environment variable for redirect URI (required for Cloud Run)
+    redirect_uri = os.getenv('OAUTH_REDIRECT_URI')
+    if not redirect_uri:
+        # Fallback to dynamic URL generation for local development
+        redirect_uri = url_for('auth_google_callback', _external=True)
+
+    logger.info(f"🔐 OAuth redirect URI: {redirect_uri}")
     return google.authorize_redirect(redirect_uri)
 
 
