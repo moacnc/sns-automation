@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Computer Use</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* Override for polling version */
+        .browser-view {
+            background: #161b22;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .browser-screenshot {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .loading-indicator {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .executing-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid var(--accent-color);
+            border-radius: 12px;
+            font-size: 12px;
+            color: var(--accent-color);
+            margin-left: 8px;
+        }
+
+        .browser-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .btn-icon {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 8px;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-hover);
+        }
+
+        .stop-button {
+            padding: 6px 12px;
+            background-color: #f85149;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 8px;
+            display: none;
+        }
+
+        .stop-button:hover {
+            background-color: #e0423f;
+        }
+
+        .stop-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Real-time message styles */
+        .progress-message {
+            display: flex;
+            margin-bottom: 12px;
+            font-size: 14px;
+            padding: 8px 12px;
+            background-color: rgba(88, 166, 255, 0.05);
+            border-left: 3px solid var(--accent-color);
+            border-radius: 4px;
+            animation: fadeIn 0.2s ease-in;
+        }
+
+        .progress-message.thinking {
+            border-left-color: #d29922;
+            background-color: rgba(210, 153, 34, 0.05);
+            color: #d29922;
+        }
+
+        .progress-message.gemini-text {
+            border-left-color: #3fb950;
+            background-color: rgba(63, 185, 80, 0.1);
+            color: #e6edf3;
+            font-weight: 500;
+            font-size: 15px;
+            padding: 12px 16px;
+        }
+
+        .progress-message.action {
+            border-left-color: #58a6ff;
+            background-color: rgba(88, 166, 255, 0.03);
+            color: #8b949e;
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* User Profile Styles */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 16px;
+            padding: 6px 12px;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-color);
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .user-name {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel: Chat History -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>💬 History(미구현)</h2>
+                <button id="clearHistoryBtn" class="btn-icon" title="Clear history" onclick="clearHistory()">🗑️</button>
+            </div>
+            <div id="historyList" class="history-list">
+                <div class="history-placeholder">
+                    No conversations yet.<br>
+                    Start by entering a prompt!
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Panel: Chat Interface -->
+        <div class="chat-panel">
+            <div class="chat-header">
+                <h1>🤖 MOA Computer Use</h1>
+                <div class="browser-controls">
+                    <div id="browserStatus" class="browser-status">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="statusLabel">Initializing...</span>
+                        <span id="executingBadge" class="executing-badge" style="display: none;">Executing...</span>
+                        <button id="stopBtn" class="stop-button" onclick="stopTask()">🛑 Stop</button>
+                    </div>
+                    <!-- User Profile -->
+                    <div id="userProfile" class="user-profile" style="display: none;">
+                        <img id="userAvatar" class="user-avatar" src="" alt="User">
+                        <span id="userName" class="user-name"></span>
+                        <button id="logoutBtn" class="btn-icon" title="Logout" onclick="logout()">🚪</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chatMessages" class="chat-messages">
+                <div class="system-message">
+                    <div class="message-icon">ℹ️</div>
+                    <div class="message-content">
+                        <strong>Welcome to MOA Computer Use!</strong><br><br>
+                        <strong>🖥️ 실제 브라우저 창에서 AI가 작동하고 원하시는 결과를 답변해드립니다!</strong><br><br>
+                        • "유튜브에서 가장 유명한 뷰티 크리에이터를 검색하고 최근 영상과 댓글 반응을 분석해줘"<br>
+                        • "삼성전자의 현재 주가를 알려줘"<br>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div id="statusBar" class="status-bar">
+                    <span id="statusText">⏳ Initializing browser...</span>
+                    <span id="urlDisplay"></span>
+                </div>
+                <div class="input-wrapper">
+                    <textarea
+                        id="promptInput"
+                        placeholder="Enter your prompt here... (e.g., 구글에서 바나나모드를 검색해줘)"
+                        rows="3"
+                        disabled
+                    ></textarea>
+                    <button id="sendBtn" class="btn-send" disabled onclick="executeTask()">
+                        <span class="send-icon">➤</span>
+                        <span class="send-text">Send</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let browserReady = false;
+        let isExecuting = false;
+        let pollingInterval = null;
+
+        // DOM Elements
+        const promptInput = document.getElementById('promptInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const statusText = document.getElementById('statusText');
+        const statusLabel = document.getElementById('statusLabel');
+        const statusDot = document.getElementById('statusDot');
+        const executingBadge = document.getElementById('executingBadge');
+        const historyList = document.getElementById('historyList');
+        const stopBtn = document.getElementById('stopBtn');
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            loadUserInfo();
+            checkStatus();
+            startPolling();
+        });
+
+        // Load user information
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+
+                if (data.logged_in && data.user) {
+                    const userProfile = document.getElementById('userProfile');
+                    const userAvatar = document.getElementById('userAvatar');
+                    const userName = document.getElementById('userName');
+
+                    userAvatar.src = data.user.picture || '';
+                    userName.textContent = data.user.name || data.user.email;
+
+                    userProfile.style.display = 'flex';
+
+                    console.log('✅ User logged in:', data.user.email);
+                }
+            } catch (error) {
+                console.error('Failed to load user info:', error);
+            }
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        // Check browser status
+        async function checkStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+
+                if (data.browser_ready) {
+                    browserReady = true;
+                    promptInput.disabled = false;
+                    sendBtn.disabled = false;
+                    statusLabel.textContent = '🟢 Browser ready';
+                    statusDot.classList.add('ready');
+                    statusText.textContent = `✅ Ready - Current URL: ${data.url}`;
+
+                    if (data.task_status === 'executing') {
+                        isExecuting = true;
+                        executingBadge.style.display = 'inline-block';
+                        stopBtn.style.display = 'inline-block';
+                        promptInput.disabled = true;
+                        sendBtn.disabled = true;
+                    } else {
+                        isExecuting = false;
+                        executingBadge.style.display = 'none';
+                        stopBtn.style.display = 'none';
+                        promptInput.disabled = false;
+                        sendBtn.disabled = false;
+                    }
+                } else {
+                    statusLabel.textContent = '🔴 Browser not ready';
+                    statusText.textContent = `⏳ Initializing...`;
+                }
+            } catch (error) {
+                console.error('Status check error:', error);
+            }
+        }
+
+        // Poll status every 2 seconds
+        function startPolling() {
+            pollingInterval = setInterval(checkStatus, 2000);
+        }
+
+        let lastMessageCount = 0;
+
+        // Poll for real-time messages during execution
+        async function pollRealtimeMessages() {
+            if (!isExecuting) return;
+
+            try {
+                const response = await fetch('/api/task_status');
+                const data = await response.json();
+
+                if (data.realtime_messages && data.realtime_messages.length > lastMessageCount) {
+                    // Display new messages
+                    const newMessages = data.realtime_messages.slice(lastMessageCount);
+                    newMessages.forEach(msg => {
+                        displayRealtimeMessage(msg);
+                    });
+                    lastMessageCount = data.realtime_messages.length;
+                }
+
+                // Continue polling if still executing
+                if (isExecuting) {
+                    setTimeout(pollRealtimeMessages, 500);  // Poll every 500ms
+                }
+            } catch (error) {
+                console.error('Polling error:', error);
+            }
+        }
+
+        // Display real-time message in chat
+        function displayRealtimeMessage(msg) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'progress-message';
+
+            if (msg.type === 'thinking') {
+                messageDiv.classList.add('thinking');
+            } else if (msg.type === 'gemini_text') {
+                messageDiv.classList.add('gemini-text');
+            } else if (msg.type === 'action') {
+                messageDiv.classList.add('action');
+            }
+
+            messageDiv.textContent = msg.message;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Execute task
+        async function executeTask() {
+            if (isExecuting || !browserReady) return;
+
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                alert('Please enter a task');
+                return;
+            }
+
+            isExecuting = true;
+            promptInput.disabled = true;
+            sendBtn.disabled = true;
+            executingBadge.style.display = 'inline-block';
+            stopBtn.style.display = 'inline-block';
+            lastMessageCount = 0;  // Reset message counter
+
+            // Add user message
+            addMessage('user', prompt);
+
+            // Clear input
+            promptInput.value = '';
+
+            // Start polling for real-time messages
+            setTimeout(pollRealtimeMessages, 500);
+
+            try {
+                const response = await fetch('/api/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const result = await response.json();
+
+                // Add assistant response
+                if (result.status === 'success') {
+                    addMessage('assistant', result.response || 'Task completed successfully');
+                    addHistoryItem(prompt);
+                } else {
+                    addMessage('error', result.error || 'Task failed');
+                }
+
+            } catch (error) {
+                addMessage('error', `Error: ${error.message}`);
+            } finally {
+                isExecuting = false;
+                executingBadge.style.display = 'none';
+                stopBtn.style.display = 'none';
+                promptInput.disabled = false;
+                sendBtn.disabled = false;
+                promptInput.focus();
+            }
+        }
+
+        // Stop task
+        async function stopTask() {
+            if (!isExecuting) return;
+
+            stopBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/stop', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    addMessage('system', '🛑 작업 중지 요청됨. Gemini가 현재 단계를 완료하고 중지합니다...');
+                } else {
+                    addMessage('error', `Failed to stop: ${result.error}`);
+                }
+            } catch (error) {
+                addMessage('error', `Error stopping task: ${error.message}`);
+            } finally {
+                stopBtn.disabled = false;
+            }
+        }
+
+        // Add message to chat
+        function addMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `${role}-message`;
+
+            let icon = '⚠️';
+            if (role === 'user') icon = '👤';
+            else if (role === 'assistant') icon = '🤖';
+            else if (role === 'system') icon = 'ℹ️';
+            else if (role === 'error') icon = '⚠️';
+
+            messageDiv.innerHTML = `
+                <div class="message-icon">${icon}</div>
+                <div class="message-content">${escapeHtml(content)}</div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Add to history
+        function addHistoryItem(prompt) {
+            const placeholder = historyList.querySelector('.history-placeholder');
+            if (placeholder) {
+                placeholder.remove();
+            }
+
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `
+                <div class="history-item-prompt">${escapeHtml(prompt)}</div>
+                <div class="history-item-time">${new Date().toLocaleTimeString()}</div>
+            `;
+
+            item.onclick = () => {
+                promptInput.value = prompt;
+                promptInput.focus();
+            };
+
+            historyList.insertBefore(item, historyList.firstChild);
+        }
+
+        // Clear history
+        function clearHistory() {
+            historyList.innerHTML = `
+                <div class="history-placeholder">
+                    No conversations yet.<br>
+                    Start by entering a prompt!
+                </div>
+            `;
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Enter to submit
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                executeTask();
+            }
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (pollingInterval) clearInterval(pollingInterval);
+        });
+    </script>
+</body>
+</html>

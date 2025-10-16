@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Computer Use - Real-time Streaming</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .stop-button {
+            padding: 6px 12px;
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: clamp(12px, 2vw, 13px);
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 8px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .stop-button:hover {
+            background-color: #e0423f;
+        }
+
+        .stop-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 640px) {
+            .stop-button {
+                padding: 8px 12px;
+                font-size: 12px;
+                margin-left: 4px;
+            }
+        }
+
+        .progress-message {
+            display: flex;
+            margin-bottom: 12px;
+            font-size: 14px;
+            padding: 8px 12px;
+            background-color: rgba(88, 166, 255, 0.05);
+            border-left: 3px solid var(--accent-color);
+            border-radius: 4px;
+            animation: fadeIn 0.2s ease-in;
+        }
+
+        .progress-message.thinking {
+            border-left-color: var(--warning-color);
+            background-color: rgba(210, 153, 34, 0.05);
+        }
+
+        .progress-message.gemini-text {
+            border-left-color: var(--success-color);
+            background-color: rgba(63, 185, 80, 0.05);
+        }
+
+        .progress-message.action {
+            border-left-color: var(--accent-color);
+            background-color: rgba(88, 166, 255, 0.05);
+        }
+
+        .progress-message.stopped {
+            border-left-color: var(--danger-color);
+            background-color: rgba(248, 81, 73, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Panel: Chat History -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>💬 Chat History</h2>
+                <button id="clearHistoryBtn" class="btn-icon" title="Clear history" onclick="clearHistory()">🗑️</button>
+            </div>
+            <div id="historyList" class="history-list">
+                <div class="history-placeholder">
+                    No conversations yet.<br>
+                    Start by entering a prompt!
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Panel: Chat Interface -->
+        <div class="chat-panel">
+            <div class="chat-header">
+                <h1>🤖 Gemini Computer Use</h1>
+                <div class="browser-controls">
+                    <div id="browserStatus" class="browser-status">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="statusLabel">Initializing...</span>
+                        <button id="stopBtn" class="stop-button" style="display: none;" onclick="stopTask()">🛑 Stop</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chatMessages" class="chat-messages">
+                <div class="system-message">
+                    <div class="message-icon">ℹ️</div>
+                    <div class="message-content">
+                        <strong>Welcome to MOA Computer Use!</strong><br><br>
+                        <strong>🖥️ 실제 브라우저 창에서 AI가 작동하고 원하시는 결과를 답변해드립니다!</strong><br><br>
+                        • "유튜브에서 가장 유명한 뷰티 크리에이터를 검색하고 최근 영상과 댓글 반응을 분석해줘"<br>
+                        • "삼성전자의 현재 주가를 알려줘"<br>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <div id="statusBar" class="status-bar">
+                    <span id="statusText">⏳ Initializing browser...</span>
+                    <span id="urlDisplay"></span>
+                </div>
+                <div class="input-wrapper">
+                    <textarea
+                        id="promptInput"
+                        placeholder="Enter your prompt here... (e.g., 구글에서 바나나모드를 검색해줘)"
+                        rows="3"
+                        disabled
+                    ></textarea>
+                    <button id="sendBtn" class="btn-send" disabled onclick="executeTask()">
+                        <span class="send-icon">➤</span>
+                        <span class="send-text">Send</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let browserReady = false;
+        let isExecuting = false;
+        let eventSource = null;
+        let sessionId = Date.now().toString();
+
+        // DOM Elements
+        const promptInput = document.getElementById('promptInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const statusText = document.getElementById('statusText');
+        const statusLabel = document.getElementById('statusLabel');
+        const statusDot = document.getElementById('statusDot');
+        const historyList = document.getElementById('historyList');
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            checkStatus();
+            setInterval(checkStatus, 5000);  // Check every 5s
+        });
+
+        // Check browser status
+        async function checkStatus() {
+            if (isExecuting) return;  // Don't check while executing
+
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+
+                if (data.browser_ready) {
+                    browserReady = true;
+                    promptInput.disabled = false;
+                    sendBtn.disabled = false;
+                    statusLabel.textContent = '🟢 Browser ready';
+                    statusDot.classList.add('ready');
+                    statusText.textContent = `✅ Ready - Current URL: ${data.url}`;
+                } else {
+                    statusLabel.textContent = '🔴 Browser not ready';
+                    statusText.textContent = `⏳ Initializing...`;
+                }
+            } catch (error) {
+                console.error('Status check error:', error);
+            }
+        }
+
+        // Execute task
+        async function executeTask() {
+            if (isExecuting || !browserReady) return;
+
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                alert('Please enter a task');
+                return;
+            }
+
+            isExecuting = true;
+            promptInput.disabled = true;
+            sendBtn.disabled = true;
+            stopBtn.style.display = 'inline-block';
+
+            // Add user message
+            addMessage('user', prompt);
+
+            // Clear input
+            promptInput.value = '';
+
+            // Connect to SSE stream
+            connectProgressStream();
+
+            try {
+                const response = await fetch('/api/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const result = await response.json();
+
+                if (result.status !== 'started') {
+                    addMessage('error', result.error || 'Failed to start task');
+                    resetUI();
+                }
+            } catch (error) {
+                addMessage('error', `Error: ${error.message}`);
+                resetUI();
+            }
+        }
+
+        // Connect to progress stream
+        function connectProgressStream() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource(`/api/progress/${sessionId}`);
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleProgressEvent(data);
+                } catch (e) {
+                    console.error('Failed to parse SSE data:', e);
+                }
+            };
+
+            eventSource.onerror = function(error) {
+                console.error('SSE Error:', error);
+                eventSource.close();
+            };
+        }
+
+        // Handle progress events
+        function handleProgressEvent(event) {
+            console.log('Progress event:', event);
+
+            switch (event.type) {
+                case 'connected':
+                    console.log('Progress stream connected');
+                    break;
+
+                case 'info':
+                    addProgressMessage(event.message, 'info');
+                    break;
+
+                case 'step_start':
+                    addProgressMessage(event.message, 'info');
+                    break;
+
+                case 'thinking':
+                    addProgressMessage(event.message, 'thinking');
+                    break;
+
+                case 'gemini_text':
+                    addProgressMessage(event.message, 'gemini-text');
+                    break;
+
+                case 'action':
+                    addProgressMessage(event.message, 'action');
+                    break;
+
+                case 'stopped':
+                    addProgressMessage(event.message, 'stopped');
+                    addMessage('assistant', '작업이 중지되었습니다.');
+                    resetUI();
+                    break;
+
+                case 'completed':
+                    const result = event.result;
+                    if (result.status === 'success') {
+                        addMessage('assistant', result.response || 'Task completed successfully');
+                        addHistoryItem(result.task);
+                    } else {
+                        addMessage('error', result.error || 'Task failed');
+                    }
+                    resetUI();
+                    break;
+
+                case 'error':
+                    addMessage('error', event.message);
+                    resetUI();
+                    break;
+
+                case 'keepalive':
+                    // Ignore keepalive messages
+                    break;
+
+                default:
+                    console.log('Unknown event type:', event.type);
+            }
+        }
+
+        // Add progress message
+        function addProgressMessage(message, type = 'info') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `progress-message ${type}`;
+            messageDiv.textContent = message;
+
+            chatMessages.appendChild(messageDiv);
+
+            // Force scroll to bottom with multiple methods
+            requestAnimationFrame(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                chatMessages.scrollTo({
+                    top: chatMessages.scrollHeight,
+                    behavior: 'smooth'
+                });
+            });
+        }
+
+        // Stop task
+        async function stopTask() {
+            try {
+                const response = await fetch('/api/stop', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                console.log('Stop result:', result);
+
+                addProgressMessage('🛑 중지 요청됨...', 'stopped');
+            } catch (error) {
+                console.error('Stop error:', error);
+                addMessage('error', `Stop failed: ${error.message}`);
+            }
+        }
+
+        // Reset UI after task completion
+        function resetUI() {
+            isExecuting = false;
+            promptInput.disabled = false;
+            sendBtn.disabled = false;
+            stopBtn.style.display = 'none';
+            promptInput.focus();
+
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+        }
+
+        // Add message to chat
+        function addMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message`;
+
+            const icon = role === 'user' ? '👤' : role === 'assistant' ? '🤖' : '⚠️';
+
+            messageDiv.innerHTML = `
+                <div class="message-icon">${icon}</div>
+                <div class="message-content">${escapeHtml(content)}</div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+
+            // Force scroll to bottom with multiple methods
+            requestAnimationFrame(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                chatMessages.scrollTo({
+                    top: chatMessages.scrollHeight,
+                    behavior: 'smooth'
+                });
+            });
+        }
+
+        // Add to history
+        function addHistoryItem(prompt) {
+            const placeholder = historyList.querySelector('.history-placeholder');
+            if (placeholder) {
+                placeholder.remove();
+            }
+
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `
+                <div class="history-item-prompt">${escapeHtml(prompt)}</div>
+                <div class="history-item-time">${new Date().toLocaleTimeString()}</div>
+            `;
+
+            item.onclick = () => {
+                promptInput.value = prompt;
+                promptInput.focus();
+            };
+
+            historyList.insertBefore(item, historyList.firstChild);
+        }
+
+        // Clear history
+        function clearHistory() {
+            historyList.innerHTML = `
+                <div class="history-placeholder">
+                    No conversations yet.<br>
+                    Start by entering a prompt!
+                </div>
+            `;
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Enter to submit
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                executeTask();
+            }
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
+    </script>
+</body>
+</html>
