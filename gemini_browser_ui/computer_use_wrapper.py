@@ -123,6 +123,56 @@ class GeminiComputerUseAgent:
             self.page.on("dialog", handle_dialog)
             logger.info("✓ Auto-dialog handler registered (alert/confirm/prompt will be auto-dismissed)")
 
+            # Enable Chrome console logging for debugging
+            def handle_console(msg):
+                log_type = msg.type
+                log_text = msg.text
+
+                # Log to Python console with appropriate level
+                if log_type == 'error':
+                    logger.error(f"🖥️  [Browser Console ERROR] {log_text}")
+                elif log_type == 'warning':
+                    logger.warning(f"🖥️  [Browser Console WARN] {log_text}")
+                elif log_type == 'info':
+                    logger.info(f"🖥️  [Browser Console INFO] {log_text}")
+                else:
+                    logger.debug(f"🖥️  [Browser Console {log_type.upper()}] {log_text}")
+
+            self.page.on("console", handle_console)
+            logger.info("✓ Browser console logging enabled")
+
+            # Inject anti-bot detection scripts
+            self.page.add_init_script("""
+                // Remove webdriver property
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined
+                });
+
+                // Randomize plugins
+                Object.defineProperty(navigator, 'plugins', {
+                    get: () => [1, 2, 3, 4, 5]
+                });
+
+                // Randomize languages
+                Object.defineProperty(navigator, 'languages', {
+                    get: () => ['ko-KR', 'ko', 'en-US', 'en']
+                });
+
+                // Mock Chrome runtime
+                window.chrome = {
+                    runtime: {}
+                };
+
+                // Override permissions
+                const originalQuery = window.navigator.permissions.query;
+                window.navigator.permissions.query = (parameters) => (
+                    parameters.name === 'notifications' ?
+                        Promise.resolve({ state: Notification.permission }) :
+                        originalQuery(parameters)
+                );
+            """)
+            logger.info("✓ Anti-bot detection scripts injected")
+
             # Navigate to Google homepage on startup
             try:
                 logger.info("🌐 Navigating to Google homepage...")
