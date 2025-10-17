@@ -88,10 +88,23 @@ class GeminiComputerUseAgent:
                     channel='chrome',
                     headless=headless,
                     viewport={'width': 1440, 'height': 900},
-                    user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
                     args=[
                         '--disable-blink-features=AutomationControlled',
                         '--disable-dev-shm-usage',
+                        '--no-sandbox',
+                        '--disable-web-security',
+                        '--disable-features=IsolateOrigins,site-per-process',
+                        '--disable-setuid-sandbox',
+                        '--disable-accelerated-2d-canvas',
+                        '--no-first-run',
+                        '--no-zygote',
+                        '--disable-gpu',
+                        '--hide-scrollbars',
+                        '--mute-audio',
+                        '--disable-background-timer-throttling',
+                        '--disable-backgrounding-occluded-windows',
+                        '--disable-renderer-backgrounding'
                     ]
                 )
                 logger.info("✓ Using Chrome with persistent context")
@@ -102,11 +115,23 @@ class GeminiComputerUseAgent:
                     str(self.user_data_dir),
                     headless=headless,
                     viewport={'width': 1440, 'height': 900},
-                    user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
                     args=[
                         '--disable-blink-features=AutomationControlled',
                         '--disable-dev-shm-usage',
-                        '--no-sandbox'
+                        '--no-sandbox',
+                        '--disable-web-security',
+                        '--disable-features=IsolateOrigins,site-per-process',
+                        '--disable-setuid-sandbox',
+                        '--disable-accelerated-2d-canvas',
+                        '--no-first-run',
+                        '--no-zygote',
+                        '--disable-gpu',
+                        '--hide-scrollbars',
+                        '--mute-audio',
+                        '--disable-background-timer-throttling',
+                        '--disable-backgrounding-occluded-windows',
+                        '--disable-renderer-backgrounding'
                     ]
                 )
                 logger.info("✓ Using Chromium with persistent context")
@@ -160,7 +185,10 @@ class GeminiComputerUseAgent:
 
                 // Mock Chrome runtime
                 window.chrome = {
-                    runtime: {}
+                    runtime: {},
+                    loadTimes: function() {},
+                    csi: function() {},
+                    app: {}
                 };
 
                 // Override permissions
@@ -170,6 +198,67 @@ class GeminiComputerUseAgent:
                         Promise.resolve({ state: Notification.permission }) :
                         originalQuery(parameters)
                 );
+
+                // Canvas fingerprinting protection
+                const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
+                HTMLCanvasElement.prototype.toDataURL = function(type) {
+                    if (type === 'image/png' && this.width === 280 && this.height === 60) {
+                        // Randomize canvas fingerprint slightly
+                        const context = this.getContext('2d');
+                        const imageData = context.getImageData(0, 0, this.width, this.height);
+                        for (let i = 0; i < imageData.data.length; i += 4) {
+                            imageData.data[i] = imageData.data[i] ^ Math.floor(Math.random() * 2);
+                        }
+                        context.putImageData(imageData, 0, 0);
+                    }
+                    return originalToDataURL.apply(this, arguments);
+                };
+
+                // WebGL fingerprinting protection
+                const getParameter = WebGLRenderingContext.prototype.getParameter;
+                WebGLRenderingContext.prototype.getParameter = function(parameter) {
+                    if (parameter === 37445) {  // UNMASKED_VENDOR_WEBGL
+                        return 'Intel Inc.';
+                    }
+                    if (parameter === 37446) {  // UNMASKED_RENDERER_WEBGL
+                        return 'Intel Iris OpenGL Engine';
+                    }
+                    return getParameter.apply(this, arguments);
+                };
+
+                // Screen resolution consistency
+                Object.defineProperty(screen, 'width', {
+                    get: () => 1440
+                });
+                Object.defineProperty(screen, 'height', {
+                    get: () => 900
+                });
+                Object.defineProperty(screen, 'availWidth', {
+                    get: () => 1440
+                });
+                Object.defineProperty(screen, 'availHeight', {
+                    get: () => 877
+                });
+
+                // Battery API
+                Object.defineProperty(navigator, 'getBattery', {
+                    get: () => undefined
+                });
+
+                // Connection API spoofing
+                Object.defineProperty(navigator, 'connection', {
+                    get: () => ({
+                        effectiveType: '4g',
+                        rtt: 100,
+                        downlink: 10,
+                        saveData: false
+                    })
+                });
+
+                // Timezone consistency
+                Date.prototype.getTimezoneOffset = function() {
+                    return -540; // KST (UTC+9)
+                };
             """)
             logger.info("✓ Anti-bot detection scripts injected")
 
