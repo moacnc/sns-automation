@@ -53,22 +53,30 @@ class VisionAnalyzer:
         """
         logger.info("Analyzing profile screenshot with GPT-4 Vision...")
 
-        prompt = """Analyze this Instagram profile screenshot and extract the following information in JSON format:
+        prompt = """Analyze this Instagram profile screenshot carefully and extract ALL information in JSON format.
+
+IMPORTANT: Look at the top section below the profile picture - you'll see THREE numbers:
+- Posts (게시물) - leftmost number
+- Followers (팔로워) - middle number
+- Following (팔로잉) - rightmost number
+
+Extract these numbers EXACTLY as shown:
 
 {
   "username": "Instagram username (without @)",
   "fullname": "Full display name",
   "bio": "Complete bio text",
-  "post_count": number of posts (integer),
-  "follower_count": "follower count as shown (e.g., '1.2K', '500')",
-  "following_count": "following count as shown",
-  "is_verified": true if verified badge visible, false otherwise,
-  "is_private": true if private account, false otherwise,
-  "is_business": true if business/creator account, false otherwise
+  "posts_count": "NUMBER OF POSTS (게시물) - the LEFTMOST number",
+  "follower_count": "FOLLOWER count (팔로워) - middle number",
+  "following_count": "FOLLOWING count (팔로잉) - rightmost number",
+  "is_verified": true if blue verified checkmark visible, false otherwise,
+  "is_private": true if private account (shows lock icon), false otherwise,
+  "is_business": true if business/creator account, false otherwise,
+  "external_url": "any clickable link in bio"
 }
 
-If any information is not visible, use null.
-Return ONLY valid JSON, no additional text."""
+If any information is not clearly visible, use null.
+Return ONLY valid JSON, no additional text or explanation."""
 
         try:
             result = self._call_vision_api(image_path, prompt)
@@ -79,6 +87,93 @@ Return ONLY valid JSON, no additional text."""
 
         except Exception as e:
             logger.error(f"Failed to analyze profile: {e}")
+            return None
+
+    def analyze_profile_advanced(self, image_path: str) -> Optional[Dict[str, Any]]:
+        """
+        고급 프로필 분석 - 성향, 카테고리, 인플루언서 타입 등
+
+        Args:
+            image_path: Path to profile screenshot
+
+        Returns:
+            Advanced profile analysis
+            {
+                "account_type": "personal" | "business" | "influencer" | "brand",
+                "content_category": ["fashion", "food", "travel", ...],
+                "engagement_quality": "high" | "medium" | "low",
+                "authenticity_score": 0-100,
+                "target_audience": "description",
+                "profile_aesthetic": "description",
+                "influencer_tier": "nano" | "micro" | "macro" | "mega" | null
+            }
+        """
+        logger.info("Performing advanced profile analysis...")
+
+        prompt = """Analyze this Instagram profile deeply and provide strategic insights in JSON format:
+
+{
+  "account_type": "Classify as: personal, business, influencer, creator, or brand",
+  "content_categories": ["list main content themes: fashion, beauty, food, travel, fitness, tech, lifestyle, etc"],
+  "engagement_quality": "Estimate based on follower count: high (>1000 followers), medium (100-1000), or low (<100)",
+  "authenticity_assessment": "Does this look like a real, active account? Brief assessment",
+  "target_audience": "Who is the likely target audience? (age group, interests, demographics)",
+  "profile_aesthetic": "Describe the visual style and branding (professional, casual, artistic, minimal, etc)",
+  "influencer_tier": "Based on followers: mega (>1M), macro (100K-1M), micro (10K-100K), nano (<10K), or null if not influencer",
+  "bio_sentiment": "Analyze bio tone: professional, casual, friendly, promotional, creative, etc",
+  "potential_collaboration": "Would this account be good for brand partnerships? Why?"
+}
+
+Provide thoughtful, strategic analysis. Return ONLY valid JSON."""
+
+        try:
+            result = self._call_vision_api(image_path, prompt)
+            if result:
+                logger.info(f"Advanced analysis complete: {result.get('account_type', 'unknown')} account")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to perform advanced analysis: {e}")
+            return None
+
+    def analyze_grid_posts(self, image_path: str) -> Optional[Dict[str, Any]]:
+        """
+        프로필 그리드 포스팅 분석 - 콘텐츠 성향 파악
+
+        Args:
+            image_path: Path to profile screenshot (showing post grid)
+
+        Returns:
+            Grid post analysis
+            {
+                "visual_themes": ["colors", "styles"],
+                "content_consistency": "high" | "medium" | "low",
+                "posting_style": "description",
+                "brand_presence": bool
+            }
+        """
+        logger.info("Analyzing profile grid posts...")
+
+        prompt = """Analyze the Instagram post grid visible in this profile screenshot:
+
+{
+  "visual_themes": ["Dominant colors, visual styles, themes you observe in the grid"],
+  "content_consistency": "Is the content visually consistent? Rate: high, medium, or low",
+  "posting_style": "Describe the posting pattern and style (professional photography, casual snapshots, curated aesthetic, etc)",
+  "dominant_subjects": ["What are the main subjects in posts? people, products, landscapes, food, etc"],
+  "brand_collaborations_visible": true if you see obvious brand/product placements in posts,
+  "grid_aesthetic_quality": "Rate the overall visual appeal: professional, amateur, artistic, casual",
+  "content_variety": "Does the content vary or is it very focused on one theme?"
+}
+
+Analyze what's visible in the grid section. Return ONLY valid JSON."""
+
+        try:
+            result = self._call_vision_api(image_path, prompt)
+            if result:
+                logger.info("Grid post analysis complete")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to analyze grid posts: {e}")
             return None
 
     def analyze_story_content(self, image_path: str) -> Optional[Dict[str, Any]]:

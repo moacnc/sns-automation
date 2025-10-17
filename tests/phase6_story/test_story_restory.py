@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Phase 5.1: Story Restory Test
+Phase 6: Story Restory Test
 목적: 스토리 리스토리 기능 확인
 ⚠️ 주의: 실제로 스토리를 재게시하므로 테스트 계정 사용 권장
 """
@@ -21,7 +21,7 @@ from loguru import logger
 def test_story_restory(username: str = "liowish", dry_run: bool = True):
     """스토리 리스토리 테스트"""
     print("=" * 60)
-    print("Phase 5.1: 스토리 리스토리 테스트")
+    print("Phase 6: 스토리 리스토리 테스트")
     print("=" * 60)
 
     # OpenAI API 키 확인
@@ -47,7 +47,7 @@ def test_story_restory(username: str = "liowish", dry_run: bool = True):
     try:
         # 초기화
         print("\n" + "─" * 60)
-        print("[Test 5.1.1] 초기화")
+        print("[Test 6.1] 초기화")
         print("─" * 60)
 
         print("  Navigator 초기화 중...")
@@ -61,7 +61,7 @@ def test_story_restory(username: str = "liowish", dry_run: bool = True):
 
         # 스토리 확인
         print("\n" + "─" * 60)
-        print(f"[Test 5.1.2] @{username}의 스토리 확인")
+        print(f"[Test 6.2] @{username}의 스토리 확인")
         print("─" * 60)
         print(f"  ⏳ 스토리 조회 중...")
 
@@ -113,7 +113,7 @@ def test_story_restory(username: str = "liowish", dry_run: bool = True):
                 print(f"\n  ℹ️  모든 스토리가 필터링되었습니다.")
 
         # 결과 저장
-        result_dir = project_root / "tests" / "phase5_advanced" / "results"
+        result_dir = project_root / "tests" / "phase6_story" / "results"
         result_dir.mkdir(parents=True, exist_ok=True)
 
         result_file = result_dir / f"story_restory_{username}.json"
@@ -134,7 +134,7 @@ def test_story_restory(username: str = "liowish", dry_run: bool = True):
             print("  ✅ 콘텐츠 필터링 기능")
             print("  ✅ 스토리 재게시 기능")
 
-        print("\n✅ Phase 5.1 완료: 스토리 리스토리 테스트 정상")
+        print("\n✅ Phase 6 완료: 스토리 리스토리 테스트 정상")
 
         return True
 
@@ -152,29 +152,23 @@ def test_story_restory(username: str = "liowish", dry_run: bool = True):
 
 if __name__ == "__main__":
     print("\n" + "🚀" * 30)
-    print("Phase 5.1: Story Restory Test")
+    print("Phase 6: Story Restory Test")
     print("🚀" * 30 + "\n")
 
-    # 사용자 입력
-    print("테스트할 사용자명 (기본값: liowish, Enter로 기본값 사용): ", end="")
-    username_input = input().strip()
-    username = username_input if username_input else "liowish"
-
-    print("\nDRY RUN 모드로 실행하시겠습니까? (y/n, 기본값: y): ", end="")
-    dry_run_input = input().strip().lower()
-    dry_run = dry_run_input != 'n'
+    # 기본값 사용 (pytest 호환)
+    username = "liowish"
+    dry_run = True
 
     success = test_story_restory(username, dry_run)
 
     # 최종 결과
     print("\n" + "=" * 60)
-    print("Phase 5.1 테스트 결과")
+    print("Phase 6 테스트 결과")
     print("=" * 60)
 
     if success:
         print("✅ 스토리 리스토리 테스트 성공")
-        print("\n다음 단계:")
-        print("  python3 tests/phase5_advanced/test_dm_send.py")
+        print("\n📝 모든 Phase 테스트 완료!")
         sys.exit(0)
     else:
         print("❌ 스토리 리스토리 테스트 실패")

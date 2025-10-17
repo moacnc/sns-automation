@@ -134,7 +134,7 @@ class SearchAgent:
                 'summary': summary,
                 'sources': sources,
                 'search_queries': search_queries,
-                'grounding_metadata': grounding_metadata,
+                # grounding_metadata 제거 - JSON 직렬화 불가능한 객체
                 'source_count': len(sources)
             }
 
@@ -155,7 +155,6 @@ class SearchAgent:
                 'summary': f"검색 중 오류 발생: {str(e)}",
                 'sources': [],
                 'search_queries': [],
-                'grounding_metadata': None,
                 'source_count': 0,
                 'error': str(e)
             }
@@ -171,52 +170,41 @@ class SearchAgent:
         Returns:
             Optimized prompt for search grounding
         """
+        # Get current date for context
+        from datetime import datetime
+        current_date = datetime.now().strftime("%Y년 %m월")
+        current_year = datetime.now().year
+
         if language == "ko":
             prompt = f"""다음 주제에 대해 웹 검색을 수행하고 요약해주세요:
 
 검색어: {query}
 
+**현재 날짜**: {current_date}
+
 요구사항:
-1. 최신 정보를 우선 검색 (2024-2025)
+1. 최신 정보를 우선 검색 ({current_year}년 기준)
 2. 신뢰할 수 있는 출처 우선
 3. 한국어 결과 우선 (있는 경우)
-4. 핵심 정보를 3-5문장으로 요약
-5. 각 정보의 출처를 명시
+4. 핵심 정보를 자연스러운 문장으로 3-5문장 요약
+5. 불필요한 마크다운 헤더(##, ###)나 코드 블록(```)을 사용하지 마세요
 
-검색 결과를 다음 형식으로 정리해주세요:
-
-## 요약
-[핵심 정보 3-5문장]
-
-## 주요 소스
-1. [소스명] - [URL]
-2. [소스명] - [URL]
-...
-
-## 추가 정보
-[필요시 추가 세부사항]
+자연스러운 한국어로 검색 결과를 요약해주세요. 예시:
+"{current_year}년 현재 한국의 대표적인 뷰티 유튜버로는 포니, 이사배, 다솜 등이 있습니다. 포니는 구독자 500만 명으로 가장 많은 팔로워를 보유하고 있으며, 메이크업 튜토리얼과 제품 리뷰를 주로 다룹니다. 이사배는 대담한 메이크업 스타일로 유명하며, 최근에는 패션 콘텐츠도 함께 제작하고 있습니다."
 """
         else:
             prompt = f"""Search and summarize information about: {query}
 
+**Current date**: {datetime.now().strftime("%B %Y")}
+
 Requirements:
-1. Prioritize recent information (2024-2025)
+1. Prioritize recent information ({current_year} based)
 2. Use reliable sources
-3. Summarize key information in 3-5 sentences
-4. Cite sources clearly
+3. Summarize key information in natural sentences (3-5 sentences)
+4. Do NOT use markdown headers (##, ###) or code blocks (```)
 
-Format the results as:
-
-## Summary
-[Key information in 3-5 sentences]
-
-## Main Sources
-1. [Source name] - [URL]
-2. [Source name] - [URL]
-...
-
-## Additional Information
-[Details if needed]
+Provide a natural language summary. Example:
+"As of {current_year}, the top Korean beauty YouTubers include Pony, RISABAE, and DaSom. Pony has the largest following with 5 million subscribers, focusing on makeup tutorials and product reviews. RISABAE is known for bold makeup styles and has recently expanded into fashion content."
 """
 
         return prompt

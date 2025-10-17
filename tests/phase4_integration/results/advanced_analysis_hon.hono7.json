@@ -1,0 +1,45 @@
+{
+  "username": "hon.hono7",
+  "basic_profile": {
+    "username": "hon.hono7",
+    "fullname": "洪 穂",
+    "bio": "🇰🇷韓国留学生🇰🇷\n韓国クリニック周り50件突破💉\n毎日オリーブヤングいます💁🏻‍♀️🤍\n翻訳 보기",
+    "posts_count": "68",
+    "follower_count": "11.8만",
+    "following_count": "83",
+    "is_verified": true,
+    "is_private": false,
+    "is_business": false,
+    "external_url": null
+  },
+  "advanced_analysis": {
+    "account_type": "influencer",
+    "content_categories": [
+      "beauty",
+      "lifestyle",
+      "travel"
+    ],
+    "engagement_quality": "high",
+    "authenticity_assessment": "This appears to be a real, active account with a verified badge and consistent content updates.",
+    "target_audience": "Young adults interested in beauty, lifestyle, and travel, likely aged 18-30.",
+    "profile_aesthetic": "Professional and polished with a focus on beauty and lifestyle imagery.",
+    "influencer_tier": "macro",
+    "bio_sentiment": "Friendly and promotional, highlighting personal achievements and interests.",
+    "potential_collaboration": "This account would be good for brand partnerships, especially in beauty and lifestyle sectors, due to its high follower count and engagement."
+  },
+  "grid_analysis": {
+    "visual_themes": [
+      "Bright colors",
+      "Casual style"
+    ],
+    "content_consistency": "medium",
+    "posting_style": "Casual snapshots",
+    "dominant_subjects": [
+      "People",
+      "Products"
+    ],
+    "brand_collaborations_visible": true,
+    "grid_aesthetic_quality": "casual",
+    "content_variety": "Focused on a few themes"
+  }
+}

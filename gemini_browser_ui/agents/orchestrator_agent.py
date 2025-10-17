@@ -238,7 +238,7 @@ class OrchestratorAgent:
             logger.error(f"❌ Task analysis failed: {e}")
             raise
 
-    def execute(self, task: str, max_steps: int = 50, headless: bool = True) -> Dict[str, Any]:
+    def execute(self, task: str, max_steps: int = 100, headless: bool = True) -> Dict[str, Any]:
         """
         Execute task with multi-agent coordination
 
@@ -439,23 +439,39 @@ class OrchestratorAgent:
                 'message': '🔄 최종 결과 정리 중...'
             })
 
-        # Build comprehensive response
+        # Build comprehensive response (clean format without markdown headers)
         response_parts = []
 
-        # Add search summary
+        # Add search summary (without extra headers)
         if search_results:
             if 'summary' in search_results:
-                response_parts.append(f"## 검색 결과\n{search_results['summary']}")
+                # Clean summary - remove any remaining markdown artifacts
+                summary = search_results['summary'].strip()
+                # Remove markdown headers
+                summary = summary.replace('## 요약\n', '').replace('## Summary\n', '')
+                summary = summary.replace('## 주요 소스\n', '').replace('## Main Sources\n', '')
+                summary = summary.replace('## 추가 정보\n', '').replace('## Additional Information\n', '')
+                response_parts.append(summary)
             elif 'results' in search_results:
-                response_parts.append("## 검색 결과")
+                # Multiple search results
                 for result in search_results['results']:
-                    response_parts.append(f"\n### {result.get('query')}\n{result['summary']}")
+                    summary = result['summary'].strip()
+                    # Remove markdown headers
+                    summary = summary.replace('## 요약\n', '').replace('## Summary\n', '')
+                    summary = summary.replace('## 주요 소스\n', '').replace('## Main Sources\n', '')
+                    summary = summary.replace('## 추가 정보\n', '').replace('## Additional Information\n', '')
+                    response_parts.append(summary)
 
-        # Add browser results
+        # Add browser results (without extra headers)
         if browser_results:
             browser_response = browser_results.get('response', browser_results.get('full_response', ''))
             if browser_response:
-                response_parts.append(f"\n## 상세 분석\n{browser_response}")
+                # Clean browser response
+                browser_response = browser_response.strip()
+                # Remove common markdown headers
+                browser_response = browser_response.replace('## 상세 분석\n', '')
+                browser_response = browser_response.replace('## Detailed Analysis\n', '')
+                response_parts.append(browser_response)
 
         final_response = "\n\n".join(response_parts) if response_parts else "작업을 완료했습니다."
 

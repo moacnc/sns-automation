@@ -185,53 +185,68 @@ Return ONLY the message text, no additional formatting or quotes."""
             True if successful, False otherwise
         """
         try:
-            from GramAddict.core.resources import ClassName
+            # Find "메시지 보내기" button using uiautomator2
+            # Try exact Korean text first
+            message_button = self.device(text="메시지 보내기")
 
-            # Find "Message" button
-            message_button = self.device.find(
-                textMatches=".*[Mm]essage.*|.*메시지.*",
-                className=ClassName.BUTTON
-            )
+            if not message_button.exists(timeout=3):
+                # Try English text
+                message_button = self.device(textContains="Message")
 
-            if not message_button.exists():
-                logger.warning("Message button not found")
-                return False
+            if not message_button.exists(timeout=3):
+                # Try resource ID
+                message_button = self.device(resourceId="com.instagram.android:id/row_profile_header_button_message")
 
-            message_button.click()
-            time.sleep(2)
+            if not message_button.exists(timeout=3):
+                # Fallback: use coordinates (center of button)
+                logger.warning("Message button not found by text, using coordinates")
+                self.navigator._adb_tap(372, 290)  # "메시지 보내기" button
+                logger.info("Clicked message button at coordinates (372, 290)")
+            else:
+                message_button.click()
+                logger.info("Clicked message button")
+
+            time.sleep(3)
 
             # Find message input field
-            message_input = self.device.find(
-                className=ClassName.EDIT_TEXT,
-                descriptionMatches=".*[Mm]essage.*"
-            )
+            message_input = self.device(className="android.widget.EditText")
 
-            if not message_input.exists():
+            if not message_input.exists(timeout=3):
                 logger.warning("Message input field not found")
                 self.navigator.go_back()
                 return False
 
             # Type message
             message_input.set_text(message_text)
-            time.sleep(1)
-
-            # Find and click send button
-            send_button = self.device.find(
-                descriptionMatches=".*[Ss]end.*|.*전송.*"
-            )
-
-            if not send_button.exists():
-                logger.warning("Send button not found")
-                self.navigator.go_back()
-                return False
-
-            send_button.click()
+            logger.info(f"Typed message: {message_text[:30]}...")
             time.sleep(2)
+
+            # Find and click send button (blue paper plane icon)
+            # Try by description first
+            send_button = self.device(description="보내기")  # Korean
+
+            if not send_button.exists(timeout=3):
+                send_button = self.device(descriptionContains="Send")  # English
+
+            if not send_button.exists(timeout=3):
+                # Try by resource ID
+                send_button = self.device(resourceId="com.instagram.android:id/row_thread_composer_send_button")
+
+            if not send_button.exists(timeout=3):
+                # Fallback: use coordinates (paper plane button bottom right)
+                logger.warning("Send button not found by text, using coordinates")
+                self.navigator._adb_tap(668, 1420)  # Send button coordinates
+                logger.info("Clicked send button at coordinates (668, 1420)")
+            else:
+                send_button.click()
+                logger.info("Clicked send button")
+
+            logger.info("✅ DM sent successfully")
+            time.sleep(3)
 
             # Go back to profile
             self.navigator.go_back()
 
-            logger.info("DM sent successfully")
             return True
 
         except Exception as e:

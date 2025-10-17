@@ -59,7 +59,7 @@ else:
 # Configuration from environment
 PORT = int(os.getenv('PORT', 8080))
 HEADLESS = os.getenv('HEADLESS', 'false').lower() == 'true'
-MAX_STEPS = int(os.getenv('MAX_STEPS', 50))
+MAX_STEPS = int(os.getenv('MAX_STEPS', 100))  # Increased from 50 to 100 for complex tasks
 
 # Flask app
 app = Flask(__name__,
@@ -440,7 +440,21 @@ def execute_task():
         result['execution_time'] = execution_time
         result['steps_taken'] = len(result.get('actions', []))
 
-        return jsonify(result)
+        # Convert result to JSON-serializable format (removes GroundingMetadata)
+        def make_json_serializable(obj):
+            """Recursively convert objects to JSON-serializable format"""
+            if isinstance(obj, dict):
+                return {k: make_json_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_json_serializable(item) for item in obj]
+            elif isinstance(obj, (str, int, float, bool, type(None))):
+                return obj
+            else:
+                # For any non-serializable object (like GroundingMetadata), convert to string
+                return str(obj)
+
+        serializable_result = make_json_serializable(result)
+        return jsonify(serializable_result)
 
     except ValueError as e:
         logger.error(f"❌ Validation error for user {user_id[:8]}: {e}")

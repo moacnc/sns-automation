@@ -1,0 +1,43 @@
+{
+  "username": "liowish",
+  "basic_profile": {
+    "username": "liowish",
+    "fullname": "Kyoung Ho",
+    "bio": null,
+    "posts_count": "13",
+    "follower_count": "18",
+    "following_count": "37",
+    "is_verified": false,
+    "is_private": false,
+    "is_business": false,
+    "external_url": null
+  },
+  "advanced_analysis": {
+    "account_type": "personal",
+    "content_categories": [
+      "food",
+      "lifestyle",
+      "travel"
+    ],
+    "engagement_quality": "low",
+    "authenticity_assessment": "This appears to be a real, active account with personal content.",
+    "target_audience": "Likely friends and family, possibly local community; age group 18-35.",
+    "profile_aesthetic": "Casual and personal with a mix of everyday life and travel.",
+    "influencer_tier": "null",
+    "bio_sentiment": "Casual",
+    "potential_collaboration": "Not ideal for brand partnerships due to low follower count and personal focus."
+  },
+  "grid_analysis": {
+    "visual_themes": [
+      "Food, outdoor activities, products"
+    ],
+    "content_consistency": "medium",
+    "posting_style": "Casual snapshots",
+    "dominant_subjects": [
+      "Food, people, products"
+    ],
+    "brand_collaborations_visible": true,
+    "grid_aesthetic_quality": "casual",
+    "content_variety": "Varied"
+  }
+}

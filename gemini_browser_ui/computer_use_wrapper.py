@@ -493,7 +493,14 @@ class GeminiComputerUseAgent:
 
         # === ROUND 0: Full structured prompt ===
         if round_num == 0:
+            # Get current date for context
+            from datetime import datetime
+            current_date = datetime.now().strftime("%Y년 %m월 %d일")
+
             return f"""당신은 브라우저 자동화 에이전트입니다. 최소한의 단계로 작업을 완료하고 검증 가능한 증거를 제공하세요.
+
+**현재 날짜**: {current_date}
+**중요**: 최신 정보를 검색할 때 2024-2025가 아닌, 현재 날짜 기준으로 검색하세요.
 
 ## 작업
 {task}
@@ -504,9 +511,14 @@ class GeminiComputerUseAgent:
 - 다음 액션 계획 (1문장)
 - 그 다음 function call 실행
 
+**절대 규칙:**
+- 텍스트 설명 없이 function call만 하지 마세요
+- `open_web_browser`는 절대 사용하지 마세요 (브라우저는 이미 열려있음)
+- URL로 이동하려면 `navigate` 액션을 사용하세요
+
 예시:
-"현재 DuckDuckGo 홈페이지에 있습니다. '삼성전자 주가'를 검색하겠습니다."
-→ type_text_at() 실행
+"현재 빈 페이지(about:blank)에 있습니다. YouTube로 이동하겠습니다."
+→ navigate(url="https://youtube.com") 실행
 
 ## 핵심 루프 (최대 {max_steps} 단계)
 각 단계: **생각 설명 (텍스트)** → 실행 (1개 액션) → 관찰 → 종료 조건 확인
@@ -533,13 +545,17 @@ class GeminiComputerUseAgent:
 
 ## 탐색 전략
 1. **스크롤 전에 찾기**: 먼저 페이지 내 검색/목차/탭 사용
-2. **일괄 스크롤**: 필요시 2-3회 연속 스크롤 (최대 12회)
+2. **정밀한 스크롤**:
+   - 상품 목록/리스트: 한 번에 조금씩 스크롤 (다음 항목이 보일 때까지)
+   - 긴 텍스트/상세 페이지: 필요시 여러 번 스크롤
+   - 너무 많이 스크롤하면 원하는 내용을 건너뛸 수 있으니 주의!
 3. **스마트 대기**: 네비게이션 후 네트워크 유휴 + 주요 요소 대기
 4. **선택자 우선순위**: role/aria > test-id > 안정적인 CSS > XPath
 
 ## 상호작용 규칙
 - 클릭 전에 요소를 화면에 스크롤
-- 긴 페이지의 경우: 여러 번 연속 스크롤, 일찍 포기하지 말 것
+- 목록 페이지: 조금씩 스크롤하면서 각 항목 확인 (건너뛰지 말 것)
+- 긴 상세 페이지: 필요한 정보가 나올 때까지 계속 스크롤
 - 페이지네이션: 작업에서 더 필요하지 않으면 최대 3페이지까지 스캔
 - 로그인/폼/캡챠 우회 금지
 
@@ -607,9 +623,23 @@ class GeminiComputerUseAgent:
 현재 URL: {current_url}
 현재 페이지는 아래 스크린샷에 표시됩니다.
 
-**첫 번째 응답 형식:**
-1. 먼저 한국어로 화면 분석과 계획 설명
-2. 그 다음 첫 번째 액션 실행"""
+**⚠️ 중요: 브라우저 상태**
+- 브라우저는 이미 열려있습니다 (open_web_browser 호출 불필요)
+- 현재 URL이 `about:blank`이면 빈 페이지이므로 `navigate` 액션으로 목표 URL로 이동하세요
+- `open_web_browser`는 사용하지 마세요 - 이미 열려있습니다!
+
+**첫 번째 응답 필수 형식 (반드시 따르세요!):**
+
+1️⃣ **먼저 텍스트로 현재 상황 설명** (필수):
+   "현재 브라우저가 about:blank 빈 페이지에 있습니다. [목표 사이트]로 이동하겠습니다."
+
+2️⃣ **그 다음 navigate 액션 실행** (필수):
+   navigate(url="https://목표사이트.com")
+
+⚠️ 경고:
+- 첫 번째 응답에서 텍스트 설명을 건너뛰지 마세요
+- `open_web_browser`를 호출하지 마세요 (이미 열려있음)
+- 반드시 navigate로 목표 사이트로 이동하세요"""
 
         # === ROUNDS 1-23: Lightweight continuation ===
         elif round_num < max_steps - 2:
@@ -621,9 +651,10 @@ class GeminiComputerUseAgent:
 3. 마지막으로 function call 실행
 
 **텍스트 설명 없이 바로 function call만 하지 마세요!**
+**중요: `open_web_browser`는 사용하지 마세요 - 브라우저는 이미 열려있습니다!**
 
 알림 (중요):
-- 긴 페이지의 경우 2-3회 연속 스크롤 - 일찍 포기하지 말 것
+- 스크롤: 목록 페이지는 조금씩, 긴 상세 페이지는 충분히 스크롤
 - 확인: 최종 답변을 위한 충분한 증거가 있는가?
 - 진행 상황: {round_num + 1}/{max_steps} 단계
 """
@@ -699,8 +730,10 @@ class GeminiComputerUseAgent:
             # ============ BROWSER/NAVIGATION FUNCTIONS ============
 
             if func_name == "open_web_browser":
-                logger.info(f"   ✓ Browser already open (no-op)")
-                return True
+                logger.warning(f"   ❌ open_web_browser rejected - browser already open! Use navigate() instead")
+                # Return False to indicate this action failed
+                # This will signal to Gemini that it should try a different action
+                return False
 
             elif func_name == "navigate":
                 url = args.get('url', '')
@@ -824,8 +857,9 @@ class GeminiComputerUseAgent:
                 direction = args.get('direction', 'down')
                 logger.info(f"   📜 Scroll {direction}")
 
-                # Increased from 500 to 1500 pixels (3x) for faster navigation through long pages
-                scroll_amount = 1500  # pixels
+                # Reduced to 400 pixels for precise scrolling (상품 목록 같은 경우 작게 스크롤)
+                # 상세 페이지나 긴 텍스트는 scroll_at with magnitude로 조절 가능
+                scroll_amount = 400  # pixels (was 1500 - too much, skips content)
                 if direction == 'down':
                     self.page.mouse.wheel(0, scroll_amount)
                 elif direction == 'up':
@@ -835,7 +869,7 @@ class GeminiComputerUseAgent:
                 elif direction == 'left':
                     self.page.mouse.wheel(-scroll_amount, 0)
 
-                time.sleep(0.3)  # Reduced from 0.5s for faster scrolling
+                time.sleep(0.3)
                 return True
 
             elif func_name == "scroll_at":
@@ -845,8 +879,8 @@ class GeminiComputerUseAgent:
                 magnitude = args.get('magnitude', 800)
 
                 # Convert normalized magnitude (0-999) to pixels
-                # Increased 2.5x for faster scrolling through long pages
-                scroll_px = int((float(magnitude) / 999.0) * 2500)
+                # Reduced for precise control (was 2500 - too much)
+                scroll_px = int((float(magnitude) / 999.0) * 1200)
 
                 logger.info(f"   📜 Scroll {direction} at ({x}, {y}) px, magnitude {scroll_px}")
 
@@ -882,7 +916,7 @@ class GeminiComputerUseAgent:
             logger.error(traceback.format_exc())
             return False
 
-    def execute_hybrid_task(self, task: str, max_steps: int = 50) -> Dict[str, Any]:
+    def execute_hybrid_task(self, task: str, max_steps: int = 100) -> Dict[str, Any]:
         """
         Computer Use 중심 실행 (DuckDuckGo 검색 권장)
 
@@ -925,7 +959,7 @@ class GeminiComputerUseAgent:
         # Computer Use 실행
         return self.execute_task(enhanced_task, max_steps=max_steps)
 
-    def execute_task(self, task: str, max_steps: int = 50) -> Dict[str, Any]:
+    def execute_task(self, task: str, max_steps: int = 100) -> Dict[str, Any]:
         """
         Execute a task using Gemini Computer Use with autonomous multi-step execution
 

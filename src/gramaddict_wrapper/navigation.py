@@ -73,6 +73,9 @@ class InstagramNavigator:
             except Exception as e:
                 logger.warning(f"Could not get device info: {e}")
 
+            # Wake up screen and unlock if locked
+            self._wake_and_unlock_screen()
+
             # Lock screen rotation to portrait for consistent coordinate-based clicking
             self._lock_screen_rotation()
 
@@ -84,6 +87,47 @@ class InstagramNavigator:
             import traceback
             logger.error(traceback.format_exc())
             return False
+
+    def _wake_and_unlock_screen(self) -> None:
+        """
+        Wake up device screen and unlock if locked (no password)
+        """
+        try:
+            # Wake up the screen
+            logger.info("Waking up device screen...")
+            subprocess.run(
+                ["adb"] + (["-s", self.device_id] if self.device_id else []) +
+                ["shell", "input", "keyevent", "KEYCODE_WAKEUP"],
+                timeout=5
+            )
+            time.sleep(0.5)
+
+            # Check if screen is locked
+            result = subprocess.run(
+                ["adb"] + (["-s", self.device_id] if self.device_id else []) +
+                ["shell", "dumpsys", "window"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+
+            # If locked, swipe up to unlock (no password)
+            if "mDreamingLockscreen=true" in result.stdout or "KeyguardServiceDelegate" in result.stdout:
+                logger.info("Screen is locked, unlocking with swipe...")
+                # Swipe up from bottom to unlock
+                subprocess.run(
+                    ["adb"] + (["-s", self.device_id] if self.device_id else []) +
+                    ["shell", "input", "swipe", "540", "2000", "540", "500"],
+                    timeout=5
+                )
+                time.sleep(0.5)
+                logger.info("✓ Screen unlocked")
+            else:
+                logger.info("✓ Screen already unlocked")
+
+        except Exception as e:
+            logger.warning(f"Could not wake/unlock screen: {e}")
+            logger.warning("Continuing anyway...")
 
     def _lock_screen_rotation(self) -> None:
         """
@@ -178,8 +222,8 @@ class InstagramNavigator:
         """Navigate to Home tab"""
         try:
             logger.info("Navigating to Home")
-            # Home tab coordinates: [0,2148][216,2182] -> center (108, 2165)
-            return self._adb_tap(108, 2165)
+            # Home tab coordinates (1080x2280): [0,2028][216,2062] -> center (108, 2045)
+            return self._adb_tap(108, 2045)
 
         except Exception as e:
             logger.error(f"Failed to navigate to Home: {e}")
@@ -189,8 +233,8 @@ class InstagramNavigator:
         """Navigate to Search tab"""
         try:
             logger.info("Navigating to Search")
-            # Search tab coordinates: [216,2148][432,2182] -> center (324, 2165)
-            return self._adb_tap(324, 2165)
+            # Search tab coordinates (1080x2280): [216,2028][432,2062] -> center (324, 2045)
+            return self._adb_tap(324, 2045)
 
         except Exception as e:
             logger.error(f"Failed to navigate to Search: {e}")
@@ -200,8 +244,8 @@ class InstagramNavigator:
         """Navigate to own Profile tab"""
         try:
             logger.info("Navigating to Profile")
-            # Profile tab coordinates: [864,2148][1080,2182] -> center (972, 2165)
-            return self._adb_tap(972, 2165)
+            # Profile tab coordinates (1080x2280): [864,2028][1080,2062] -> center (972, 2045)
+            return self._adb_tap(972, 2045)
 
         except Exception as e:
             logger.error(f"Failed to navigate to Profile: {e}")
@@ -457,8 +501,10 @@ class InstagramNavigator:
 
             if status == "unknown":
                 logger.warning("Unknown follow status - attempting coordinate click")
-                if self._adb_tap(168, 397):
-                    logger.info("Clicked at Follow button coordinates")
+                # Correct coordinates from UI Automator dump
+                # Button bounds: [32,588][482,672], Center: (257, 630)
+                if self._adb_tap(257, 630):
+                    logger.info("Clicked at Follow button coordinates (257, 630)")
                     time.sleep(1)
                     return True
                 return False
@@ -500,6 +546,170 @@ class InstagramNavigator:
             except Exception as e2:
                 logger.error(f"Failed to launch Instagram (alternative method): {e2}")
                 return False
+
+    def login(self, username: str, password: str) -> bool:
+        """
+        Login to Instagram with username and password
+        Uses coordinate-based approach for maximum reliability
+
+        Args:
+            username: Instagram username
+            password: Instagram password
+
+        Returns:
+            True if login successful, False otherwise
+        """
+        try:
+            logger.info(f"Attempting to login as @{username}...")
+
+            # Check if already logged in
+            if self.device(resourceId="com.instagram.android:id/tab_avatar").exists(timeout=2):
+                logger.info("Already logged in (bottom nav bar detected)")
+                return True
+
+            # Wait for login screen to load
+            time.sleep(2)
+
+            # Click "로그인" button if on welcome screen
+            if self.device(text="로그인").exists(timeout=2):
+                logger.info("On welcome screen, clicking 로그인 button...")
+                self.device(text="로그인").click()
+                time.sleep(3)
+
+            # === Step 1: Enter Username ===
+            logger.info("Step 1: Tapping username field...")
+            # Coordinates from screenshot: username field center
+            self._adb_tap(278, 285)
+            time.sleep(1.5)
+
+            # Dismiss Samsung Pass or autofill popup if appears
+            if self.device(textContains="Pass").exists(timeout=1) or \
+               self.device(textContains="삼성").exists(timeout=1):
+                logger.info("Dismissing Samsung Pass/autofill popup...")
+                self.go_back()
+                time.sleep(1)
+                # Tap username field again
+                logger.info("Re-tapping username field...")
+                self._adb_tap(278, 285)
+                time.sleep(1)
+
+            # Use uiautomator2 to set text directly (avoids autofill issues)
+            logger.info(f"Entering username: {username}")
+            try:
+                # Find EditText by class and set text
+                username_field = self.device(className="android.widget.EditText", instance=0)
+                if username_field.exists(timeout=2):
+                    username_field.set_text(username)
+                    logger.info(f"✓ Username entered via uiautomator2: {username}")
+                else:
+                    # Fallback to ADB input
+                    logger.warning("Using ADB input fallback for username")
+                    self._adb_input_text(username)
+                    logger.info(f"✓ Username entered via ADB: {username}")
+            except Exception as e:
+                logger.warning(f"Error with uiautomator2 setText: {e}, using ADB input")
+                self._adb_input_text(username)
+                logger.info(f"✓ Username entered via ADB: {username}")
+            time.sleep(1)
+
+            # Take screenshot to verify username entry
+            self.screenshot('/tmp/after_username.png')
+            logger.info("Screenshot saved: /tmp/after_username.png")
+
+            # === Step 2: Enter Password ===
+            logger.info("Step 2: Tapping password field...")
+            # Coordinates from screenshot: password field center
+            self._adb_tap(278, 369)
+            time.sleep(1.5)
+
+            # Dismiss Samsung Pass or autofill popup if appears
+            if self.device(textContains="Pass").exists(timeout=1) or \
+               self.device(textContains="삼성").exists(timeout=1):
+                logger.info("Dismissing Samsung Pass/autofill popup...")
+                self.go_back()
+                time.sleep(1)
+                # Tap password field again
+                logger.info("Re-tapping password field...")
+                self._adb_tap(278, 369)
+                time.sleep(1)
+
+            # Use uiautomator2 to set text directly (avoids autofill issues)
+            logger.info("Entering password...")
+            try:
+                # Find password EditText by class
+                password_field = self.device(className="android.widget.EditText", instance=1)
+                if password_field.exists(timeout=2):
+                    password_field.set_text(password)
+                    logger.info("✓ Password entered via uiautomator2")
+                else:
+                    # Fallback to ADB input
+                    logger.warning("Using ADB input fallback for password")
+                    self._adb_input_text(password)
+                    logger.info("✓ Password entered via ADB")
+            except Exception as e:
+                logger.warning(f"Error with uiautomator2 setText: {e}, using ADB input")
+                self._adb_input_text(password)
+                logger.info("✓ Password entered via ADB")
+            time.sleep(1)
+
+            # Take screenshot to verify password entry
+            self.screenshot('/tmp/after_password.png')
+            logger.info("Screenshot saved: /tmp/after_password.png")
+
+            # === Step 3: Click Login Button ===
+            logger.info("Step 3: Clicking login button...")
+            # Coordinates from screenshot: 로그인 button center
+            self._adb_tap(278, 457)
+            logger.info("✓ Login button clicked")
+            time.sleep(1)
+
+            # Wait for login to complete (Instagram has network delay)
+            logger.info("Waiting for login to complete...")
+            time.sleep(15)  # Increased from 8 to 15 seconds for network delay
+
+            # Take screenshot after login attempt
+            self.screenshot('/tmp/after_login_attempt.png')
+            logger.info("Screenshot saved: /tmp/after_login_attempt.png")
+
+            # Check if login was successful
+            # Look for bottom navigation bar (most reliable indicator)
+            if self.device(resourceId="com.instagram.android:id/tab_avatar").exists(timeout=5):
+                logger.info("✓ Login successful! (Bottom nav detected)")
+
+                # Handle "Save Login Info" dialog if it appears
+                time.sleep(2)
+                if self.device(textContains="저장").exists(timeout=2) or \
+                   self.device(textContains="로그인 정보").exists(timeout=2):
+                    logger.info("Dismissing 'Save Login Info' dialog...")
+                    if self.device(textContains="나중에").exists(timeout=1):
+                        self.device(textContains="나중에").click()
+                        time.sleep(1)
+                    elif self.device(textContains="Not Now").exists(timeout=1):
+                        self.device(textContains="Not Now").click()
+                        time.sleep(1)
+
+                # Handle "Turn on Notifications" dialog if it appears
+                if self.device(textContains="알림").exists(timeout=2) or \
+                   self.device(textContains="Notification").exists(timeout=2):
+                    logger.info("Dismissing 'Turn on Notifications' dialog...")
+                    if self.device(textContains="나중에").exists(timeout=1):
+                        self.device(textContains="나중에").click()
+                        time.sleep(1)
+                    elif self.device(textContains="Not Now").exists(timeout=1):
+                        self.device(textContains="Not Now").click()
+                        time.sleep(1)
+
+                return True
+            else:
+                logger.error("Login may have failed - bottom navigation not detected")
+                logger.error("Check screenshot: /tmp/after_login_attempt.png")
+                return False
+
+        except Exception as e:
+            logger.error(f"Failed to login: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return False
 
     def close(self) -> None:
         """Close device connection"""
