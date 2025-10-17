@@ -262,11 +262,11 @@ class GeminiComputerUseAgent:
             """)
             logger.info("✓ Anti-bot detection scripts injected")
 
-            # Navigate to Bing homepage on startup (more bot-friendly than Google/DuckDuckGo!)
+            # Start at blank page (no search engine needed - use direct navigation)
             try:
-                logger.info("🔍 Navigating to Bing homepage...")
-                self.page.goto("https://www.bing.com", wait_until="domcontentloaded", timeout=10000)
-                logger.info("✓ Started at Bing homepage")
+                logger.info("🌐 Starting at blank page...")
+                self.page.goto("about:blank", wait_until="domcontentloaded", timeout=5000)
+                logger.info("✓ Browser ready - use direct URLs for navigation")
             except Exception as nav_error:
                 logger.warning(f"⚠️  Could not navigate to DuckDuckGo: {nav_error}")
                 # Continue anyway - not critical
@@ -511,17 +511,25 @@ class GeminiComputerUseAgent:
 ## 핵심 루프 (최대 {max_steps} 단계)
 각 단계: **생각 설명 (텍스트)** → 실행 (1개 액션) → 관찰 → 종료 조건 확인
 
-## 🔍 검색 엔진 사용 규칙 (매우 중요!)
-**웹 검색이 필요한 경우:**
-- ✅ 반드시 Bing (bing.com)을 사용하세요
-- ❌ Google, DuckDuckGo는 사용하지 마세요 (봇으로 차단됨)
-- 현재 브라우저는 이미 Bing 홈페이지에 있습니다
-- 검색창에 검색어를 입력하고 Enter를 누르세요
+## 🌐 웹 탐색 전략 (매우 중요!)
+**검색 엔진을 사용하지 마세요! 모든 검색 엔진(Google, Bing, DuckDuckGo)이 봇을 차단합니다.**
 
-**검색이 필요한 예시:**
-- "유명한 유튜버 찾기" → Bing에서 검색
-- "최신 뉴스 확인" → Bing에서 검색
-- 특정 사이트는 직접 접속 (예: youtube.com, instagram.com)
+**대신 다음 방법을 사용하세요:**
+
+1. **직접 URL 접속**:
+   - "유튜브에서 뷰티 크리에이터 찾기" → youtube.com 직접 접속 → YouTube 내부 검색 사용
+   - "인스타그램 트렌드 분석" → instagram.com 직접 접속 → 해시태그 검색
+   - "삼성전자 주가" → finance.yahoo.com/quote/005930.KS 직접 접속
+
+2. **플랫폼 내부 검색 활용**:
+   - YouTube: youtube.com에서 내부 검색창 사용
+   - Instagram: instagram.com에서 검색
+   - Twitter/X: x.com에서 검색
+
+3. **알려진 URL 패턴 사용**:
+   - YouTube 채널: youtube.com/@채널명
+   - 뉴스 사이트: naver.com, chosun.com 등
+   - 금융 정보: finance.yahoo.com, finance.naver.com
 
 ## 탐색 전략
 1. **스크롤 전에 찾기**: 먼저 페이지 내 검색/목차/탭 사용
@@ -903,13 +911,15 @@ class GeminiComputerUseAgent:
         if not self.page:
             self.start_browser(headless=os.getenv('HEADLESS', 'false').lower() == 'true')
 
-        # Computer Use에 Bing 사용 안내
+        # Computer Use에 직접 탐색 전략 안내
         enhanced_task = f"""{task}
 
-**중요 지침:**
-- 웹 검색이 필요하면 반드시 Bing (bing.com)을 사용하세요
-- Google, DuckDuckGo는 사용하지 마세요 (봇으로 차단됨)
-- 현재 브라우저는 이미 Bing 홈페이지에 있습니다
+**중요 지침 - 검색 엔진 사용 금지!**
+- ❌ Google, Bing, DuckDuckGo 등 모든 검색 엔진은 봇으로 차단됩니다
+- ✅ 대신 목적 사이트로 직접 이동하세요
+  예: "유튜버 찾기" → youtube.com 직접 접속 → YouTube 내부 검색
+  예: "주가 확인" → finance.yahoo.com 직접 접속
+- ✅ 각 플랫폼의 내부 검색 기능을 활용하세요
 - 작업을 완료한 후 반드시 최종 분석 및 결론을 제시하세요"""
 
         # Computer Use 실행
