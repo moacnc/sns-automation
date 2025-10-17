@@ -382,6 +382,11 @@ def execute_task():
         # Set progress callback
         agent_instance.progress_callback = progress_callback
 
+        # CRITICAL: Reset stop flag before starting new task
+        # Otherwise, previous stop request will immediately halt new task
+        agent_instance.reset_stop_flag()
+        logger.info("🔄 Stop flag reset - ready to execute new task")
+
         # Always restart browser to avoid greenlet thread issues
         # Close existing browser if any
         if agent_instance.page is not None or agent_instance.context is not None:

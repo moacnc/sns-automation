@@ -985,6 +985,16 @@ class GeminiComputerUseAgent:
                 # Take screenshot
                 screenshot_path = self.take_screenshot()
 
+                # Check stop flag after screenshot (before expensive API call)
+                if self.should_stop:
+                    logger.warning("🛑 Task stopped by user (after screenshot)")
+                    if self.progress_callback:
+                        self.progress_callback({
+                            'type': 'stopped',
+                            'message': '사용자가 작업을 중지했습니다.'
+                        })
+                    break
+
                 # Build optimized prompt for this round
                 prompt = self._build_prompt_for_round(
                     round_num=round_num,
@@ -1057,6 +1067,16 @@ class GeminiComputerUseAgent:
                         })
                     continue  # Skip to next round
 
+                # Check stop flag after API call (before function execution)
+                if self.should_stop:
+                    logger.warning("🛑 Task stopped by user (after API call)")
+                    if self.progress_callback:
+                        self.progress_callback({
+                            'type': 'stopped',
+                            'message': '사용자가 작업을 중지했습니다.'
+                        })
+                    break
+
                 # Process response parts
                 has_actions = False
                 round_text = []
@@ -1091,6 +1111,16 @@ class GeminiComputerUseAgent:
 
                         # Check for function calls (Gemini can return multiple!)
                         if hasattr(part, 'function_call') and part.function_call:
+                            # Check stop flag before executing each function
+                            if self.should_stop:
+                                logger.warning("🛑 Task stopped by user (during function execution)")
+                                if self.progress_callback:
+                                    self.progress_callback({
+                                        'type': 'stopped',
+                                        'message': '사용자가 작업을 중지했습니다.'
+                                    })
+                                break
+
                             has_actions = True
                             func_call = part.function_call
                             action_desc = f"{func_call.name}({dict(func_call.args)})"
