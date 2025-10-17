@@ -350,11 +350,17 @@ class OrchestratorAgent:
         # Build enhanced task with search context
         enhanced_task = self._build_browser_task(browser_instructions, search_results, plan)
 
-        computer_use_agent = self._get_computer_use_agent()
+        # CRITICAL: Create fresh ComputerUseAgent for each task to avoid state pollution
+        # This ensures clean session_history, stop flags, and browser state
+        logger.info("🔄 Creating fresh ComputerUseAgent instance for new task")
+        computer_use_agent = GeminiComputerUseAgent(api_key=self.api_key)
+        computer_use_agent.progress_callback = self.progress_callback
 
-        # Start browser if not started
-        if not computer_use_agent.page:
-            computer_use_agent.start_browser(headless=headless)
+        # Update the cached instance for stop/screenshot functionality
+        self.computer_use_agent = computer_use_agent
+
+        # Start fresh browser
+        computer_use_agent.start_browser(headless=headless)
 
         try:
             # Execute browser task
