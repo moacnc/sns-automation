@@ -343,8 +343,9 @@ def execute_task():
             logger.info("🖥️  Browser window should be visible on your screen")
 
         try:
-            # Execute task (synchronously in main thread)
-            result = agent_instance.execute_task(prompt, max_steps=max_steps_override)
+            # Execute task with HYBRID mode (Google Search Grounding + Computer Use)
+            # This avoids bot detection by using official Google Search API
+            result = agent_instance.execute_hybrid_task(prompt, max_steps=max_steps_override)
         finally:
             # ALWAYS clear callback after task completion to prevent thread issues
             agent_instance.progress_callback = None
@@ -632,7 +633,9 @@ if __name__ == '__main__':
     try:
         # Run Flask with threading to allow parallel requests (status polling while executing)
         # Callback issues are now handled by proper cleanup after each task
-        app.run(host='0.0.0.0', port=PORT, debug=False, threaded=True, use_reloader=False)
+        # Enable debug mode in development for auto-reload of templates and code
+        is_dev = os.getenv('ENVIRONMENT', 'development') == 'development'
+        app.run(host='0.0.0.0', port=PORT, debug=is_dev, threaded=True, use_reloader=is_dev)
     except KeyboardInterrupt:
         logger.info("\n👋 Shutting down gracefully...")
         cleanup()

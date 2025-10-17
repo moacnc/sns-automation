@@ -173,13 +173,13 @@ class GeminiComputerUseAgent:
             """)
             logger.info("✓ Anti-bot detection scripts injected")
 
-            # Navigate to Google homepage on startup
+            # Navigate to DuckDuckGo homepage on startup (no reCAPTCHA!)
             try:
-                logger.info("🌐 Navigating to Google homepage...")
-                self.page.goto("https://www.google.com", wait_until="domcontentloaded", timeout=10000)
-                logger.info("✓ Started at Google homepage")
+                logger.info("🦆 Navigating to DuckDuckGo homepage...")
+                self.page.goto("https://duckduckgo.com", wait_until="domcontentloaded", timeout=10000)
+                logger.info("✓ Started at DuckDuckGo homepage")
             except Exception as nav_error:
-                logger.warning(f"⚠️  Could not navigate to Google: {nav_error}")
+                logger.warning(f"⚠️  Could not navigate to DuckDuckGo: {nav_error}")
                 # Continue anyway - not critical
 
             logger.info("✓ Browser and page initialized")
@@ -412,6 +412,18 @@ class GeminiComputerUseAgent:
 ## 핵심 루프 (최대 {max_steps} 단계)
 각 단계: 계획 (1줄) → 실행 (1개 액션) → 관찰 (간략히) → 종료 조건 확인
 
+## 🦆 검색 엔진 사용 규칙 (매우 중요!)
+**웹 검색이 필요한 경우:**
+- ✅ 반드시 DuckDuckGo (duckduckgo.com)를 사용하세요
+- ❌ Google은 절대 사용하지 마세요 (reCAPTCHA로 차단됨)
+- 현재 브라우저는 이미 DuckDuckGo 홈페이지에 있습니다
+- 검색창에 검색어를 입력하고 Enter를 누르세요
+
+**검색이 필요한 예시:**
+- "유명한 유튜버 찾기" → DuckDuckGo에서 검색
+- "최신 뉴스 확인" → DuckDuckGo에서 검색
+- 특정 사이트는 직접 접속 (예: youtube.com, instagram.com)
+
 ## 탐색 전략
 1. **스크롤 전에 찾기**: 먼저 페이지 내 검색/목차/탭 사용
 2. **일괄 스크롤**: 필요시 2-3회 연속 스크롤 (최대 12회)
@@ -450,7 +462,39 @@ class GeminiComputerUseAgent:
   3. 팝업을 닫은 후 원래 작업 계속
 - 스크롤이 2-3회 연속 작동하지 않으면 화면에 팝업/overlay가 있는지 확인하고 닫기
 
-작업 완료 시 "최종 답변:"으로 시작하는 명확한 답변 제공
+## 📊 최종 답변 요구사항 (필수!)
+**작업 완료 시 반드시 다음 형식으로 최종 답변을 제공하세요:**
+
+```
+최종 답변:
+
+[작업 요약]
+- 수행한 작업 간략 설명
+
+[핵심 발견사항]
+- 주요 발견 내용 (데이터, 통계, 관찰 등)
+
+[분석 및 결론]
+- 수집한 정보를 바탕으로 한 분석
+- 최종 결론 및 인사이트
+```
+
+**예시:**
+```
+최종 답변:
+
+[작업 요약]
+유튜브에서 상위 3명의 뷰티 크리에이터를 조사하고 최근 영상의 댓글 반응을 분석했습니다.
+
+[핵심 발견사항]
+1. 올리브영 채널 - 구독자 200만, 최근 영상 조회수 평균 50만
+2. 다솜 뷰티 - 구독자 180만, 최근 영상 조회수 평균 45만
+3. 이사배 - 구독자 150만, 최근 영상 조회수 평균 40만
+
+[분석 및 결론]
+올리브영 채널이 가장 유명하며, 댓글 반응은 대체로 긍정적입니다.
+특히 제품 리뷰 영상의 참여율이 높고, 시청자들의 구매 의도가 강하게 나타납니다.
+```
 
 ## 시작
 현재 URL: {current_url}
@@ -728,6 +772,47 @@ class GeminiComputerUseAgent:
             import traceback
             logger.error(traceback.format_exc())
             return False
+
+    def execute_hybrid_task(self, task: str, max_steps: int = 50) -> Dict[str, Any]:
+        """
+        Computer Use 중심 실행 (DuckDuckGo 검색 권장)
+
+        핵심 전략:
+        1. 모든 작업을 Computer Use (Gemini)에게 맡김
+        2. Gemini가 필요하면 스스로 DuckDuckGo 검색 수행
+        3. 시스템 프롬프트에 "검색은 DuckDuckGo 사용" 명시
+        4. 최종 분석 및 결론 도출
+
+        Args:
+            task: 사용자 작업 설명
+            max_steps: Computer Use 최대 단계
+
+        Returns:
+            실행 결과 (분석 및 결론 포함)
+        """
+        logger.info(f"🎯 Computer Use 중심 실행: {task}")
+
+        if self.progress_callback:
+            self.progress_callback({
+                'type': 'info',
+                'message': f'🤖 Computer Use로 작업 시작'
+            })
+
+        # 브라우저 시작 (아직 안 되어 있으면)
+        if not self.page:
+            self.start_browser(headless=os.getenv('HEADLESS', 'false').lower() == 'true')
+
+        # Computer Use에 DuckDuckGo 사용 안내
+        enhanced_task = f"""{task}
+
+**중요 지침:**
+- 웹 검색이 필요하면 반드시 DuckDuckGo (duckduckgo.com)를 사용하세요
+- Google은 사용하지 마세요 (reCAPTCHA로 차단됨)
+- 현재 브라우저는 이미 DuckDuckGo 홈페이지에 있습니다
+- 작업을 완료한 후 반드시 최종 분석 및 결론을 제시하세요"""
+
+        # Computer Use 실행
+        return self.execute_task(enhanced_task, max_steps=max_steps)
 
     def execute_task(self, task: str, max_steps: int = 50) -> Dict[str, Any]:
         """
