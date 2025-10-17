@@ -190,8 +190,13 @@ def auth_google():
     # Use environment variable for redirect URI (required for Cloud Run)
     redirect_uri = os.getenv('OAUTH_REDIRECT_URI')
     if not redirect_uri:
-        # Fallback to dynamic URL generation for local development
-        redirect_uri = url_for('auth_google_callback', _external=True)
+        # Fallback to dynamic URL generation
+        # Force HTTPS for production (GCP Cloud Run)
+        if request.headers.get('X-Forwarded-Proto') == 'https':
+            redirect_uri = url_for('auth_google_callback', _external=True, _scheme='https')
+        else:
+            # Local development uses http
+            redirect_uri = url_for('auth_google_callback', _external=True)
 
     logger.info(f"🔐 OAuth redirect URI: {redirect_uri}")
     return google.authorize_redirect(redirect_uri)
