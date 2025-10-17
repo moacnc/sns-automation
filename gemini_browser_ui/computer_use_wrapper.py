@@ -262,11 +262,11 @@ class GeminiComputerUseAgent:
             """)
             logger.info("✓ Anti-bot detection scripts injected")
 
-            # Navigate to DuckDuckGo homepage on startup (no reCAPTCHA!)
+            # Navigate to Bing homepage on startup (more bot-friendly than Google/DuckDuckGo!)
             try:
-                logger.info("🦆 Navigating to DuckDuckGo homepage...")
-                self.page.goto("https://duckduckgo.com", wait_until="domcontentloaded", timeout=10000)
-                logger.info("✓ Started at DuckDuckGo homepage")
+                logger.info("🔍 Navigating to Bing homepage...")
+                self.page.goto("https://www.bing.com", wait_until="domcontentloaded", timeout=10000)
+                logger.info("✓ Started at Bing homepage")
             except Exception as nav_error:
                 logger.warning(f"⚠️  Could not navigate to DuckDuckGo: {nav_error}")
                 # Continue anyway - not critical
@@ -511,16 +511,16 @@ class GeminiComputerUseAgent:
 ## 핵심 루프 (최대 {max_steps} 단계)
 각 단계: **생각 설명 (텍스트)** → 실행 (1개 액션) → 관찰 → 종료 조건 확인
 
-## 🦆 검색 엔진 사용 규칙 (매우 중요!)
+## 🔍 검색 엔진 사용 규칙 (매우 중요!)
 **웹 검색이 필요한 경우:**
-- ✅ 반드시 DuckDuckGo (duckduckgo.com)를 사용하세요
-- ❌ Google은 절대 사용하지 마세요 (reCAPTCHA로 차단됨)
-- 현재 브라우저는 이미 DuckDuckGo 홈페이지에 있습니다
+- ✅ 반드시 Bing (bing.com)을 사용하세요
+- ❌ Google, DuckDuckGo는 사용하지 마세요 (봇으로 차단됨)
+- 현재 브라우저는 이미 Bing 홈페이지에 있습니다
 - 검색창에 검색어를 입력하고 Enter를 누르세요
 
 **검색이 필요한 예시:**
-- "유명한 유튜버 찾기" → DuckDuckGo에서 검색
-- "최신 뉴스 확인" → DuckDuckGo에서 검색
+- "유명한 유튜버 찾기" → Bing에서 검색
+- "최신 뉴스 확인" → Bing에서 검색
 - 특정 사이트는 직접 접속 (예: youtube.com, instagram.com)
 
 ## 탐색 전략
@@ -903,13 +903,13 @@ class GeminiComputerUseAgent:
         if not self.page:
             self.start_browser(headless=os.getenv('HEADLESS', 'false').lower() == 'true')
 
-        # Computer Use에 DuckDuckGo 사용 안내
+        # Computer Use에 Bing 사용 안내
         enhanced_task = f"""{task}
 
 **중요 지침:**
-- 웹 검색이 필요하면 반드시 DuckDuckGo (duckduckgo.com)를 사용하세요
-- Google은 사용하지 마세요 (reCAPTCHA로 차단됨)
-- 현재 브라우저는 이미 DuckDuckGo 홈페이지에 있습니다
+- 웹 검색이 필요하면 반드시 Bing (bing.com)을 사용하세요
+- Google, DuckDuckGo는 사용하지 마세요 (봇으로 차단됨)
+- 현재 브라우저는 이미 Bing 홈페이지에 있습니다
 - 작업을 완료한 후 반드시 최종 분석 및 결론을 제시하세요"""
 
         # Computer Use 실행
