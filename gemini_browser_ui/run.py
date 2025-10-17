@@ -35,9 +35,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 try:
     from computer_use_wrapper import GeminiComputerUseAgent
+    from agents.orchestrator_agent import OrchestratorAgent
 except ImportError as e:
-    logger.error(f"❌ Failed to import GeminiComputerUseAgent: {e}")
-    logger.error("Make sure computer_use_wrapper.py exists in the same directory")
+    logger.error(f"❌ Failed to import agents: {e}")
+    logger.error("Make sure computer_use_wrapper.py and agents/ exist in the same directory")
     sys.exit(1)
 
 # Load environment from both local and parent directory
@@ -95,8 +96,8 @@ google = oauth.register(
     }
 )
 
-# Global state - Per-user agent instances and execution locks
-user_agents = {}  # {user_id: agent_instance}
+# Global state - Per-user orchestrator instances and execution locks
+user_orchestrators = {}  # {user_id: OrchestratorAgent instance}
 user_execution_locks = {}  # {user_id: threading.Lock()}
 user_current_tasks = {}  # {user_id: current_task_dict}
 
@@ -108,26 +109,26 @@ def get_user_id():
     return session['user'].get('sub')  # Google user ID (unique)
 
 
-def get_agent():
-    """Get or create agent for current user (per-user isolation)"""
+def get_orchestrator():
+    """Get or create Orchestrator Agent for current user (per-user isolation)"""
     user_id = get_user_id()
 
-    if user_id not in user_agents:
+    if user_id not in user_orchestrators:
         api_key = os.getenv('GEMINI_API_KEY')
         if not api_key:
             logger.error("❌ GEMINI_API_KEY not found in environment")
             logger.info("💡 Get your API key from: https://aistudio.google.com/apikey")
             raise ValueError("GEMINI_API_KEY not found in environment variables")
 
-        logger.info(f"🚀 Initializing Gemini Computer Use Agent for user: {user_id[:8]}...")
+        logger.info(f"🚀 Initializing Multi-Agent Orchestrator for user: {user_id[:8]}...")
         try:
-            user_agents[user_id] = GeminiComputerUseAgent(api_key=api_key)
-            logger.info(f"✅ Agent initialized for user: {user_id[:8]}")
+            user_orchestrators[user_id] = OrchestratorAgent(api_key=api_key)
+            logger.info(f"✅ Orchestrator initialized for user: {user_id[:8]}")
         except Exception as e:
-            logger.error(f"❌ Failed to initialize agent: {e}")
+            logger.error(f"❌ Failed to initialize orchestrator: {e}")
             raise
 
-    return user_agents[user_id]
+    return user_orchestrators[user_id]
 
 
 def get_user_lock():
@@ -278,17 +279,19 @@ def get_status():
                 'task_status': 'error'
             }), 401
 
-        agent_instance = get_agent()
+        orchestrator = get_orchestrator()
         current_task = get_current_task()
 
-        # Check if browser is actually running
-        browser_ready = (agent_instance.browser is not None and
-                        agent_instance.page is not None)
+        # Check if computer use agent exists and has browser running
+        computer_use_agent = orchestrator.get_computer_use_agent()
+        browser_ready = (computer_use_agent is not None and
+                        computer_use_agent.browser is not None and
+                        computer_use_agent.page is not None)
 
         return jsonify({
-            'browser_ready': True,  # Agent is always ready to accept tasks
+            'browser_ready': True,  # Orchestrator is always ready to accept tasks
             'browser_running': browser_ready,
-            'url': agent_instance.page.url if agent_instance.page else 'Click Send to start browser',
+            'url': computer_use_agent.page.url if browser_ready else 'Click Send to start task',
             'task_status': current_task['status'],
             'task_prompt': current_task['prompt'],
             'headless': HEADLESS,
@@ -352,22 +355,32 @@ def execute_task():
         }
         set_current_task(current_task)
 
-        # Get agent first
-        agent_instance = get_agent()
+        # Get orchestrator for multi-agent execution
+        orchestrator = get_orchestrator()
 
         # Create a thread-safe message list for this specific request
         from queue import Queue
         message_queue = Queue()
 
-        # Define progress callback without closure issues
+        # Define progress callback with agent support
         def progress_callback(update):
-            """Callback to receive real-time progress from agent"""
+            """Callback to receive real-time progress from agents"""
             try:
+                # Add agent icon to message
+                agent_icons = {
+                    'search': '🔍',
+                    'computer_use': '🖱️',
+                    'orchestrator': '🎯'
+                }
+                agent_type = update.get('agent', '')
+                icon = agent_icons.get(agent_type, '')
+
                 message = {
                     'timestamp': time.time(),
                     'type': update.get('type', 'info'),
-                    'message': update.get('message', ''),
-                    'round': update.get('round')
+                    'message': f"{icon} {update.get('message', '')}" if icon else update.get('message', ''),
+                    'round': update.get('round'),
+                    'agent': agent_type
                 }
                 # Use queue instead of direct list append to avoid thread issues
                 message_queue.put(message)
@@ -375,53 +388,29 @@ def execute_task():
                 user_task = get_current_task()
                 user_task['realtime_messages'].append(message)
                 set_current_task(user_task)
-                logger.debug(f"Progress update: {update.get('message', '')}")
+                logger.debug(f"Progress update [{agent_type}]: {update.get('message', '')}")
             except Exception as e:
                 logger.warning(f"Progress callback error: {e}")
 
-        # Set progress callback
-        agent_instance.progress_callback = progress_callback
-
-        # CRITICAL: Reset stop flag before starting new task
-        # Otherwise, previous stop request will immediately halt new task
-        agent_instance.reset_stop_flag()
-        logger.info("🔄 Stop flag reset - ready to execute new task")
-
-        # Always restart browser to avoid greenlet thread issues
-        # Close existing browser if any
-        if agent_instance.page is not None or agent_instance.context is not None:
-            logger.info("🔄 Closing existing browser to avoid thread conflicts...")
-            try:
-                agent_instance.close_browser()
-            except Exception as e:
-                logger.warning(f"⚠️  Error closing browser: {e}")
-
-        # Start fresh browser for this request
-        logger.info(f"🚀 Starting browser (headless={HEADLESS})...")
-        agent_instance.start_browser(headless=HEADLESS)
-        logger.info("✅ Browser started successfully!")
-        if not HEADLESS:
-            logger.info("🖥️  Browser window should be visible on your screen")
+        # Set progress callback for orchestrator
+        orchestrator.progress_callback = progress_callback
 
         try:
-            # Execute task with HYBRID mode (Google Search Grounding + Computer Use)
-            # This avoids bot detection by using official Google Search API
-            result = agent_instance.execute_hybrid_task(prompt, max_steps=max_steps_override)
+            # Execute task with Multi-Agent Orchestrator
+            # Orchestrator will decide whether to use SearchAgent, ComputerUseAgent, or both
+            logger.info(f"🎯 Executing with Multi-Agent Orchestrator (max_steps={max_steps_override}, headless={HEADLESS})")
+            result = orchestrator.execute(
+                task=prompt,
+                max_steps=max_steps_override,
+                headless=HEADLESS
+            )
         finally:
             # ALWAYS clear callback after task completion to prevent thread issues
-            agent_instance.progress_callback = None
+            orchestrator.progress_callback = None
             # Force garbage collection of callback closure
             del progress_callback
             import gc
             gc.collect()
-
-            # ALWAYS close browser after task completion
-            logger.info("🧹 Closing browser after task completion...")
-            try:
-                agent_instance.close_browser()
-                logger.info("✅ Browser closed successfully")
-            except Exception as e:
-                logger.warning(f"⚠️  Error closing browser: {e}")
 
         # Calculate execution time
         current_task = get_current_task()
@@ -450,10 +439,12 @@ def execute_task():
         logger.error(f"❌ Validation error for user {user_id[:8]}: {e}")
         # Clear callback and close browser on error
         try:
-            agent_instance = get_agent()
-            agent_instance.progress_callback = None
-            agent_instance.close_browser()
-            logger.info("✅ Browser closed after validation error")
+            orchestrator = get_orchestrator()
+            orchestrator.progress_callback = None
+            computer_use_agent = orchestrator.get_computer_use_agent()
+            if computer_use_agent:
+                computer_use_agent.close_browser()
+                logger.info("✅ Browser closed after validation error")
         except:
             pass
 
@@ -478,10 +469,12 @@ def execute_task():
 
         # Clear callback and close browser on error
         try:
-            agent_instance = get_agent()
-            agent_instance.progress_callback = None
-            agent_instance.close_browser()
-            logger.info("✅ Browser closed after execution error")
+            orchestrator = get_orchestrator()
+            orchestrator.progress_callback = None
+            computer_use_agent = orchestrator.get_computer_use_agent()
+            if computer_use_agent:
+                computer_use_agent.close_browser()
+                logger.info("✅ Browser closed after execution error")
         except:
             pass
 
@@ -534,14 +527,23 @@ def stop_task():
                 'error': 'No task is currently executing'
             }), 400
 
-        agent_instance = get_agent()
-        agent_instance.should_stop = True
-        logger.info(f"🛑 Stop requested by user {user_id[:8]}")
+        orchestrator = get_orchestrator()
 
-        return jsonify({
-            'status': 'success',
-            'message': 'Stop signal sent to agent'
-        })
+        # Set stop flag on Computer Use Agent if it exists
+        computer_use_agent = orchestrator.get_computer_use_agent()
+        if computer_use_agent:
+            computer_use_agent.should_stop = True
+            logger.info(f"🛑 Stop requested by user {user_id[:8]}")
+            return jsonify({
+                'status': 'success',
+                'message': 'Stop signal sent to Computer Use Agent'
+            })
+        else:
+            logger.warning(f"⚠️  No Computer Use Agent running for user {user_id[:8]}")
+            return jsonify({
+                'status': 'error',
+                'error': 'No Computer Use Agent is currently running'
+            }), 400
     except Exception as e:
         logger.error(f"❌ Failed to stop task: {e}")
         return jsonify({
@@ -554,12 +556,13 @@ def stop_task():
 def get_screenshot():
     """Get current browser screenshot"""
     try:
-        agent_instance = get_agent()
+        orchestrator = get_orchestrator()
+        computer_use_agent = orchestrator.get_computer_use_agent()
 
-        if not agent_instance.page:
+        if not computer_use_agent or not computer_use_agent.page:
             return jsonify({'error': 'Browser not started yet'}), 400
 
-        screenshot_path = agent_instance.take_screenshot()
+        screenshot_path = computer_use_agent.take_screenshot()
 
         # Read and return as base64
         import base64
@@ -568,8 +571,8 @@ def get_screenshot():
 
         return jsonify({
             'screenshot': screenshot_data,
-            'url': agent_instance.page.url,
-            'title': agent_instance.page.title()
+            'url': computer_use_agent.page.url,
+            'title': computer_use_agent.page.title()
         })
     except Exception as e:
         logger.error(f"❌ Screenshot failed: {e}")
