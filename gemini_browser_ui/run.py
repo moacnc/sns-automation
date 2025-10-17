@@ -95,38 +95,71 @@ google = oauth.register(
     }
 )
 
-# Global state
-agent = None
-execution_lock = threading.Lock()
-current_task = {
-    'status': 'idle',  # idle, executing, completed, error
-    'prompt': None,
-    'result': None,
-    'progress': [],
-    'realtime_messages': []  # Real-time Gemini messages
-}
+# Global state - Per-user agent instances and execution locks
+user_agents = {}  # {user_id: agent_instance}
+user_execution_locks = {}  # {user_id: threading.Lock()}
+user_current_tasks = {}  # {user_id: current_task_dict}
+
+
+def get_user_id():
+    """Get current user ID from session"""
+    if 'user' not in session:
+        raise ValueError("User not logged in")
+    return session['user'].get('sub')  # Google user ID (unique)
 
 
 def get_agent():
-    """Get or create agent (runs in main thread)"""
-    global agent
+    """Get or create agent for current user (per-user isolation)"""
+    user_id = get_user_id()
 
-    if agent is None:
+    if user_id not in user_agents:
         api_key = os.getenv('GEMINI_API_KEY')
         if not api_key:
             logger.error("❌ GEMINI_API_KEY not found in environment")
             logger.info("💡 Get your API key from: https://aistudio.google.com/apikey")
             raise ValueError("GEMINI_API_KEY not found in environment variables")
 
-        logger.info("🚀 Initializing Gemini Computer Use Agent...")
+        logger.info(f"🚀 Initializing Gemini Computer Use Agent for user: {user_id[:8]}...")
         try:
-            agent = GeminiComputerUseAgent(api_key=api_key)
-            logger.info("✅ Gemini Computer Use Agent initialized successfully")
+            user_agents[user_id] = GeminiComputerUseAgent(api_key=api_key)
+            logger.info(f"✅ Agent initialized for user: {user_id[:8]}")
         except Exception as e:
             logger.error(f"❌ Failed to initialize agent: {e}")
             raise
 
-    return agent
+    return user_agents[user_id]
+
+
+def get_user_lock():
+    """Get or create execution lock for current user"""
+    user_id = get_user_id()
+
+    if user_id not in user_execution_locks:
+        user_execution_locks[user_id] = threading.Lock()
+
+    return user_execution_locks[user_id]
+
+
+def get_current_task():
+    """Get or create current task dict for current user"""
+    user_id = get_user_id()
+
+    if user_id not in user_current_tasks:
+        user_current_tasks[user_id] = {
+            'status': 'idle',
+            'prompt': None,
+            'result': None,
+            'progress': [],
+            'realtime_messages': []
+        }
+
+    return user_current_tasks[user_id]
+
+
+def set_current_task(task_dict):
+    """Update current task for current user"""
+    user_id = get_user_id()
+    user_current_tasks[user_id] = task_dict
 
 
 @app.route('/')
@@ -234,9 +267,19 @@ def get_user():
 
 @app.route('/api/status')
 def get_status():
-    """Get browser and task status"""
+    """Get browser and task status for current user"""
     try:
+        # Check if user is logged in
+        if 'user' not in session:
+            return jsonify({
+                'browser_ready': False,
+                'browser_running': False,
+                'error': 'User not logged in',
+                'task_status': 'error'
+            }), 401
+
         agent_instance = get_agent()
+        current_task = get_current_task()
 
         # Check if browser is actually running
         browser_ready = (agent_instance.browser is not None and
@@ -249,7 +292,8 @@ def get_status():
             'task_status': current_task['status'],
             'task_prompt': current_task['prompt'],
             'headless': HEADLESS,
-            'max_steps': MAX_STEPS
+            'max_steps': MAX_STEPS,
+            'user_id': get_user_id()[:8]  # Show user ID for debugging
         })
     except Exception as e:
         logger.error(f"❌ Status check failed: {e}")
@@ -263,15 +307,24 @@ def get_status():
 
 @app.route('/api/execute', methods=['POST'])
 def execute_task():
-    """Execute Gemini Computer Use task"""
-    global current_task
-
-    # Check if already executing
-    if not execution_lock.acquire(blocking=False):
-        logger.warning("⚠️  Task rejected: Another task is already running")
+    """Execute Gemini Computer Use task for current user"""
+    # Check if user is logged in
+    if 'user' not in session:
         return jsonify({
             'status': 'error',
-            'error': 'Another task is already running. Please wait for the current task to complete.'
+            'error': 'User not logged in'
+        }), 401
+
+    # Get user-specific lock
+    user_lock = get_user_lock()
+    user_id = get_user_id()
+
+    # Check if already executing for this user
+    if not user_lock.acquire(blocking=False):
+        logger.warning(f"⚠️  Task rejected for user {user_id[:8]}: Another task is already running")
+        return jsonify({
+            'status': 'error',
+            'error': 'You already have a task running. Please wait for it to complete.'
         }), 409
 
     try:
@@ -285,10 +338,10 @@ def execute_task():
         if not prompt:
             return jsonify({'status': 'error', 'error': 'Empty prompt provided'}), 400
 
-        logger.info(f"🎯 Executing task: {prompt}")
+        logger.info(f"🎯 Executing task for user {user_id[:8]}: {prompt}")
         logger.info(f"⚙️  Max steps: {max_steps_override}")
 
-        # Update task status
+        # Update task status for this user
         current_task = {
             'status': 'executing',
             'prompt': prompt,
@@ -297,6 +350,7 @@ def execute_task():
             'realtime_messages': [],
             'start_time': time.time()
         }
+        set_current_task(current_task)
 
         # Get agent first
         agent_instance = get_agent()
@@ -317,8 +371,10 @@ def execute_task():
                 }
                 # Use queue instead of direct list append to avoid thread issues
                 message_queue.put(message)
-                # Also append to current_task for polling
-                current_task['realtime_messages'].append(message)
+                # Also append to user's current_task for polling
+                user_task = get_current_task()
+                user_task['realtime_messages'].append(message)
+                set_current_task(user_task)
                 logger.debug(f"Progress update: {update.get('message', '')}")
             except Exception as e:
                 logger.warning(f"Progress callback error: {e}")
@@ -363,10 +419,11 @@ def execute_task():
                 logger.warning(f"⚠️  Error closing browser: {e}")
 
         # Calculate execution time
+        current_task = get_current_task()
         execution_time = time.time() - current_task['start_time']
 
-        # Update task status
-        current_task = {
+        # Update task status for this user
+        updated_task = {
             'status': 'completed' if result.get('status') == 'success' else 'error',
             'prompt': prompt,
             'result': result,
@@ -374,8 +431,9 @@ def execute_task():
             'realtime_messages': current_task['realtime_messages'],  # Keep messages
             'execution_time': execution_time
         }
+        set_current_task(updated_task)
 
-        logger.info(f"✅ Task completed: {result.get('status')} (took {execution_time:.2f}s)")
+        logger.info(f"✅ Task completed for user {user_id[:8]}: {result.get('status')} (took {execution_time:.2f}s)")
 
         # Add execution metadata to result
         result['execution_time'] = execution_time
@@ -384,7 +442,7 @@ def execute_task():
         return jsonify(result)
 
     except ValueError as e:
-        logger.error(f"❌ Validation error: {e}")
+        logger.error(f"❌ Validation error for user {user_id[:8]}: {e}")
         # Clear callback and close browser on error
         try:
             agent_instance = get_agent()
@@ -394,19 +452,21 @@ def execute_task():
         except:
             pass
 
-        current_task = {
+        error_task = {
             'status': 'error',
-            'prompt': current_task.get('prompt'),
+            'prompt': prompt,
             'result': {'error': str(e)},
             'progress': []
         }
+        set_current_task(error_task)
+
         return jsonify({
             'status': 'error',
             'error': str(e)
         }), 400
 
     except Exception as e:
-        logger.error(f"❌ Execution error: {e}")
+        logger.error(f"❌ Execution error for user {user_id[:8]}: {e}")
         import traceback
         error_trace = traceback.format_exc()
         logger.error(f"Traceback:\n{error_trace}")
@@ -420,13 +480,15 @@ def execute_task():
         except:
             pass
 
-        current_task = {
+        current_task = get_current_task()
+        error_task = {
             'status': 'error',
             'prompt': current_task.get('prompt'),
             'result': {'error': str(e), 'traceback': error_trace},
             'progress': [],
             'realtime_messages': current_task.get('realtime_messages', [])
         }
+        set_current_task(error_task)
 
         return jsonify({
             'status': 'error',
@@ -435,30 +497,41 @@ def execute_task():
         }), 500
 
     finally:
-        execution_lock.release()
+        user_lock.release()
 
 
 @app.route('/api/task_status')
 def get_task_status():
-    """Get current task status (for polling)"""
-    return jsonify(current_task)
+    """Get current task status for current user (for polling)"""
+    try:
+        if 'user' not in session:
+            return jsonify({'status': 'error', 'error': 'Not logged in'}), 401
+
+        current_task = get_current_task()
+        return jsonify(current_task)
+    except Exception as e:
+        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 
 @app.route('/api/stop', methods=['POST'])
 def stop_task():
-    """Stop the currently executing task"""
-    global agent
-
-    if current_task.get('status') != 'executing':
-        return jsonify({
-            'status': 'error',
-            'error': 'No task is currently executing'
-        }), 400
-
+    """Stop the currently executing task for current user"""
     try:
+        if 'user' not in session:
+            return jsonify({'status': 'error', 'error': 'Not logged in'}), 401
+
+        user_id = get_user_id()
+        current_task = get_current_task()
+
+        if current_task.get('status') != 'executing':
+            return jsonify({
+                'status': 'error',
+                'error': 'No task is currently executing'
+            }), 400
+
         agent_instance = get_agent()
         agent_instance.should_stop = True
-        logger.info("🛑 Stop requested by user")
+        logger.info(f"🛑 Stop requested by user {user_id[:8]}")
 
         return jsonify({
             'status': 'success',
