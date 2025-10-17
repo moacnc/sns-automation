@@ -199,14 +199,16 @@ def auth_google():
             redirect_uri = url_for('auth_google_callback', _external=True)
 
     logger.info(f"🔐 OAuth redirect URI: {redirect_uri}")
-    return google.authorize_redirect(redirect_uri)
+    return google.authorize_redirect(redirect_uri=redirect_uri)
 
 
 @app.route('/auth/google/callback')
 def auth_google_callback():
     """Google OAuth callback"""
     try:
-        # Get access token (Authlib automatically uses the redirect_uri from authorize_redirect)
+        # Get access token
+        # Authlib automatically retrieves redirect_uri from session (saved during authorize_redirect)
+        # DO NOT pass redirect_uri here - it causes "got multiple values for keyword argument" error
         token = google.authorize_access_token()
 
         # Get user info
