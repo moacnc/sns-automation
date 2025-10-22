@@ -84,57 +84,6 @@
             color: #fff;
         }
 
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            background: #fff;
-            border: 1px solid #d0d0d0;
-            border-radius: 8px;
-            color: #1a1a1a;
-            text-decoration: none;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        .back-btn:hover {
-            background: #f0f0f0;
-            border-color: #1a1a1a;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid #d0d0d0;
-        }
-
-        .logout-btn {
-            padding: 8px 16px;
-            background: #fff;
-            border: 1px solid #d0d0d0;
-            border-radius: 6px;
-            color: #1a1a1a;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .logout-btn:hover {
-            background: #f0f0f0;
-            border-color: #1a1a1a;
-        }
-
-        .user-name {
-            color: #1a1a1a;
-        }
-
         /* Overview Section */
         .overview-section {
             width: 100%;
@@ -157,6 +106,12 @@
             font-size: 18px;
             color: #666;
             margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .highlight-text {
+            color: #ff4444;
+            font-weight: 700;
         }
 
         .overview-grid {
@@ -226,9 +181,9 @@
         /* Workflow Nodes - Graph RAG Style */
         .workflow-grid {
             position: relative;
-            min-height: 1600px;
+            min-height: 1350px;
             margin-bottom: 40px;
-            padding: 40px 20px;
+            padding: 40px 60px;
         }
 
         /* UTM Tracker at top */
@@ -269,24 +224,7 @@
 
         /* UTM to Marketing Connection Line */
         .utm-connection-line {
-            position: absolute;
-            left: 50%;
-            top: 100%;
-            width: 2px;
-            height: 80px;
-            background: #e8e8e8;
-            transform: translateX(-50%);
-            z-index: 9;
-        }
-
-        .utm-connection-line::after {
-            content: '▼';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 14px;
-            color: #d0d0d0;
+            display: none;
         }
 
         /* SVG Canvas for connections */
@@ -316,6 +254,21 @@
             min-width: 240px;
             max-width: 280px;
             z-index: 5;
+        }
+
+        /* Workflow node with clickable link - highlighted */
+        .workflow-node.has-link {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #38bdf8;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+        }
+
+        .workflow-node.has-link:hover {
+            transform: scale(1.1);
+            border-color: #0ea5e9;
+            box-shadow: 0 8px 24px rgba(14, 165, 233, 0.3);
+            z-index: 10;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
         }
 
         .workflow-node:hover {
@@ -406,15 +359,35 @@
 
         /* Connection Lines - SVG Based */
         .connection-line {
-            stroke: #e8e8e8;
-            stroke-width: 1.5;
+            stroke: #c8c8c8;
+            stroke-width: 2;
             fill: none;
             stroke-dasharray: 5, 5;
             animation: dashFlow 30s linear infinite;
+            marker-end: url(#arrowhead);
+        }
+
+        .connection-line-feedback {
+            stroke: #ffaaaa;
+            stroke-width: 1.5;
+            fill: none;
+            stroke-dasharray: 8, 4;
+            animation: dashFlowReverse 20s linear infinite;
+            marker-end: url(#arrowhead-feedback);
+            opacity: 0.5;
+        }
+
+        .connection-line-context {
+            stroke: #aaaaff;
+            stroke-width: 1.5;
+            fill: none;
+            stroke-dasharray: 2, 2;
+            animation: contextFlow 15s linear infinite;
+            opacity: 0.4;
         }
 
         .agent-connection-line {
-            stroke: #f0f0f0;
+            stroke: #d8d8d8;
             stroke-width: 1;
             fill: none;
             stroke-dasharray: 3, 3;
@@ -426,49 +399,19 @@
             }
         }
 
-        /* Data Flow Animation - Disabled for cleaner look */
-        .data-particle {
-            display: none;
+        @keyframes dashFlowReverse {
+            from {
+                stroke-dashoffset: 0;
+            }
+            to {
+                stroke-dashoffset: 1000;
+            }
         }
 
-        /* UTM Tracking Visualization */
-        .utm-tracking {
-            background: #fafafa;
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 24px;
-            margin-top: 30px;
-            text-align: center;
-        }
-
-        .utm-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 16px;
-        }
-
-        .utm-flow {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .utm-badge {
-            padding: 8px 16px;
-            background: #fff;
-            border: 1px solid #d0d0d0;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #1a1a1a;
-            font-family: 'Courier New', monospace;
-        }
-
-        .utm-arrow {
-            color: #666;
-            font-size: 20px;
+        @keyframes contextFlow {
+            to {
+                stroke-dashoffset: -500;
+            }
         }
 
         /* Node Info Display */
@@ -482,28 +425,44 @@
         }
 
         .node-link {
-            font-size: 10px;
-            color: #666;
-            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #0ea5e9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 600;
             text-decoration: none;
-            display: block;
-            margin-top: 6px;
-            padding: 6px 10px;
-            background: #f5f5f5;
-            border-radius: 6px;
-            border: 1px solid #e0e0e0;
-            transition: all 0.2s;
-            word-break: break-all;
+            display: inline-block;
+            margin-top: 8px;
+            padding: 8px 16px;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 2px solid #38bdf8;
+            transition: all 0.3s;
+            box-shadow: 0 2px 6px rgba(56, 189, 248, 0.15);
         }
 
         .node-link:hover {
-            background: #e0e0e0;
-            border-color: #1a1a1a;
+            background: #0ea5e9;
+            color: #ffffff;
+            border-color: #0284c7;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+            transform: translateY(-2px);
         }
 
-        /* Dashboard Links Section - HIDDEN */
-        .dashboard-section {
-            display: none;
+        /* Relation Labels */
+        .relation-label {
+            font-size: 10px;
+            font-weight: 600;
+            fill: #666;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+
+        .relation-label-feedback {
+            fill: #ff4444;
+        }
+
+        .relation-label-context {
+            fill: #4444ff;
         }
 
         /* Memo Section */
@@ -573,112 +532,83 @@
             font-weight: 700;
         }
 
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
-            margin-top: 30px;
-        }
-
-        .dashboard-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 28px;
-            text-decoration: none;
-            transition: all 0.3s;
-            display: block;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .dashboard-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
+        /* Vision Section */
+        .vision-section {
             width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #58a6ff, #a78bfa);
-            transform: scaleX(0);
-            transition: transform 0.3s;
-        }
-
-        .dashboard-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .dashboard-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(88, 166, 255, 0.5);
-            transform: translateY(-6px);
-            box-shadow: 0 12px 24px rgba(88, 166, 255, 0.2);
-        }
-
-        .dashboard-icon {
-            font-size: 40px;
-            margin-bottom: 16px;
-        }
-
-        .dashboard-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #fff;
-            margin-bottom: 8px;
-        }
-
-        .dashboard-description {
-            font-size: 14px;
-            color: #a1a1aa;
-            margin-bottom: 16px;
-            line-height: 1.5;
-        }
-
-        .dashboard-link {
-            font-size: 12px;
-            color: #58a6ff;
-            font-family: 'Courier New', monospace;
-            word-break: break-all;
-        }
-
-        /* Graph RAG Info */
-        .graph-rag-info {
-            background: #fafafa;
+            background: #fff;
             border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 24px;
+            border-radius: 16px;
+            padding: 50px 60px;
+            margin-top: 60px;
+            margin-bottom: 60px;
+        }
+
+        .vision-content {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
             margin-top: 30px;
         }
 
-        .graph-rag-title {
-            font-size: 18px;
+        .vision-paragraph {
+            background: #fafafa;
+            border-left: 4px solid #d0d0d0;
+            padding: 24px 28px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .vision-paragraph:hover {
+            background: #f5f5f5;
+            border-left-color: #1a1a1a;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .vision-paragraph p {
+            font-size: 16px;
+            line-height: 1.9;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        .vision-paragraph strong {
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .vision-paragraph .highlight {
+            background: linear-gradient(to top, #ffd700 40%, transparent 40%);
             font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            padding: 2px 4px;
         }
 
-        .graph-rag-list {
-            list-style: none;
-            padding: 0;
+        .vision-paragraph .highlight-blue {
+            background: linear-gradient(to top, #bae6fd 40%, transparent 40%);
+            font-weight: 600;
+            padding: 2px 4px;
         }
 
-        .graph-rag-list li {
-            padding: 8px 0;
-            color: #666;
-            font-size: 14px;
-            display: flex;
-            align-items: start;
-            gap: 10px;
+        .vision-paragraph .highlight-green {
+            background: linear-gradient(to top, #bbf7d0 40%, transparent 40%);
+            font-weight: 600;
+            padding: 2px 4px;
         }
 
-        .graph-rag-list li::before {
-            content: '✓';
-            color: #1a1a1a;
-            font-weight: bold;
-            flex-shrink: 0;
+        .vision-paragraph .highlight-green-strong {
+            background: linear-gradient(to top, #86efac 50%, transparent 50%);
+            font-weight: 700;
+            padding: 2px 6px;
+            color: #065f46;
+        }
+
+        .vision-final {
+            border-left: 4px solid #22c55e;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+
+        .vision-final:hover {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            border-left-color: #16a34a;
         }
 
         /* Responsive */
@@ -714,6 +644,15 @@
             .graph-container {
                 padding: 30px 20px;
             }
+
+            .vision-section {
+                padding: 30px 24px;
+            }
+
+            .vision-paragraph p {
+                font-size: 14px;
+                line-height: 1.8;
+            }
         }
     </style>
 </head>
@@ -726,23 +665,14 @@
                     <button class="lang-btn active" onclick="switchLanguage('ko')" data-lang="ko">한글</button>
                     <button class="lang-btn" onclick="switchLanguage('ja')" data-lang="ja">日本語</button>
                 </div>
-                <a href="/" class="back-btn">
-                    <span>←</span>
-                    <span data-i18n="back">Back to Chat</span>
-                </a>
-            </div>
-            <div class="user-info">
-                <img id="userAvatar" class="user-avatar" src="" alt="User" style="display: none;">
-                <span id="userName"></span>
-                <button class="logout-btn" onclick="logout()" data-i18n="logout">Logout</button>
             </div>
         </div>
 
         <!-- Overview Section -->
         <div class="overview-section">
             <h1 class="overview-title" data-i18n="title">MOA AI Workflow Architecture</h1>
-            <p class="overview-subtitle" data-i18n="subtitle">
-                Graph RAG 기반 AI Agents 자동화 워크플로우 시스템
+            <p class="overview-subtitle">
+                <span data-i18n="subtitle">자동화와 효율화를 통해 가치 있는 인사이트를 창출하고, 이를 기반으로 </span><span class="highlight-text" data-i18n="subtitleHighlight">지속 가능한 성장을 실현</span>
             </p>
 
             <div class="overview-grid">
@@ -756,8 +686,8 @@
                 <div class="overview-card">
                     <div class="overview-card-icon">🔗</div>
                     <div class="overview-card-title" data-i18n="graphRagTitle">Graph RAG 구성</div>
-                    <div class="overview-card-text" data-i18n="graphRagDesc">
-                        연결된 워크플로우를 Graph RAG로 구성하여 맥락 기반 의사결정과 최적화를 실현합니다.
+                    <div class="overview-card-text">
+                        <span data-i18n="graphRagDesc">Graph RAG로 워크플로우를 연결하여, 복잡한 맥락 속에서도 </span><span class="highlight-text" data-i18n="graphRagHighlight">인과를 넘어선 통찰과 정밀한 예측</span><span data-i18n="graphRagDesc2">을 만들어갑니다.</span>
                     </div>
                 </div>
                 <div class="overview-card">
@@ -770,8 +700,8 @@
                 <div class="overview-card">
                     <div class="overview-card-icon">📊</div>
                     <div class="overview-card-title" data-i18n="quantifyTitle">정량화 분석</div>
-                    <div class="overview-card-text" data-i18n="quantifyDesc">
-                        병목, 리워크, 핸드오버 문제를 정량화하여 사용자 경험을 지속적으로 개선합니다.
+                    <div class="overview-card-text">
+                        <span data-i18n="quantifyDesc">병목, 리워크, 핸드오버의 </span><span class="highlight-text" data-i18n="quantifyHighlight">근본 원인을 규명</span><span data-i18n="quantifyDesc2">하고, 데이터 기반으로 </span><span class="highlight-text" data-i18n="quantifyHighlight2">실질적인 문제 해결</span><span data-i18n="quantifyDesc3">을 이끕니다.</span>
                     </div>
                 </div>
             </div>
@@ -792,11 +722,26 @@
                     </div>
 
                     <!-- SVG Canvas for connections -->
-                    <svg class="graph-canvas" id="graphCanvas"></svg>
+                    <svg class="graph-canvas" id="graphCanvas">
+                        <defs>
+                            <!-- Forward flow arrow -->
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#b0b0b0" />
+                            </marker>
+                            <!-- Feedback arrow -->
+                            <marker id="arrowhead-feedback" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#ff4444" />
+                            </marker>
+                            <!-- Context flow arrow -->
+                            <marker id="arrowhead-context" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#4444ff" />
+                            </marker>
+                        </defs>
+                    </svg>
 
-                    <!-- Workflow Nodes - Vertical Flow (8 Steps) -->
+                    <!-- Workflow Nodes - Sequential Flow Layout -->
                     <!-- 1. Marketing -->
-                    <div class="workflow-node" data-step="1" style="left: 50%; top: 200px; transform: translateX(-50%);">
+                    <div class="workflow-node has-link" data-step="1" style="left: 15%; top: 180px;">
                         <div class="node-content">
                             <div class="node-icon">📱</div>
                             <div class="node-info">
@@ -810,18 +755,18 @@
                     </div>
 
                     <!-- 2. Design -->
-                    <div class="workflow-node" data-step="2" style="left: 50%; top: 380px; transform: translateX(-50%);">
+                    <div class="workflow-node" data-step="2" style="left: 65%; top: 240px;">
                         <div class="node-content">
                             <div class="node-icon">🎨</div>
                             <div class="node-info">
-                                <div class="node-title">Design</div>
+                                <div class="node-title">Design/Contents</div>
                                 <div class="node-desc" data-i18n="designDesc">디자인 및 콘텐츠 제작</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- 3. Creative Review -->
-                    <div class="workflow-node" data-step="3" style="left: 50%; top: 560px; transform: translateX(-50%);">
+                    <div class="workflow-node" data-step="3" style="left: 12%; top: 380px;">
                         <div class="node-content">
                             <div class="node-icon">🎬</div>
                             <div class="node-info">
@@ -831,23 +776,42 @@
                         </div>
                     </div>
 
-                    <!-- 4. CS -->
-                    <div class="workflow-node" data-step="4" style="left: 50%; top: 740px; transform: translateX(-50%);">
+                    <!-- 4. CS with sub-nodes -->
+                    <div class="workflow-node has-link" data-step="4" style="left: 60%; top: 470px; min-width: 340px;">
                         <div class="node-content">
                             <div class="node-icon">💬</div>
                             <div class="node-info">
                                 <div class="node-title">CS</div>
                                 <div class="node-desc" data-i18n="csDesc">고객 서비스 요청 관리 및 응대</div>
-                                <div class="node-desc" style="margin-top: 8px; font-weight: 600; color: #1a1a1a;">id: admin / p/w: admin12</div>
                                 <a href="https://moacnc-hospital-back-office-front-282346488044.asia-northeast3.run.app/" target="_blank" class="node-link" data-i18n="dashboardBtn">
                                     Dashboard →
                                 </a>
+
+                                <!-- Sub-nodes inside CS -->
+                                <div style="display: flex; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e0e0e0;">
+                                    <div style="flex: 1; padding: 12px; background: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                        <div style="font-size: 20px; margin-bottom: 6px;">📅</div>
+                                        <div style="font-size: 12px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px;">Reservation</div>
+                                        <div style="font-size: 9px; color: #999;" data-i18n="reservationDesc">예약 접수 및 일정 관리</div>
+                                    </div>
+                                    <div style="flex: 1; padding: 12px; background: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;">
+                                        <div style="font-size: 20px; margin-bottom: 6px;">📲</div>
+                                        <div style="font-size: 12px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px;">PreCall</div>
+                                        <div style="font-size: 9px; color: #999;" data-i18n="precallDesc">사전 상담 및 확인</div>
+                                    </div>
+                                    <div style="flex: 1; padding: 12px; background: #fff9e6; border-radius: 8px; border: 1px solid #ffd700; position: relative;">
+                                        <div style="position: absolute; top: 4px; right: 6px; font-size: 8px; font-weight: 700; color: #ff9800; background: #fff3cd; padding: 2px 6px; border-radius: 4px; border: 1px solid #ffc107;">개발중</div>
+                                        <div style="font-size: 20px; margin-bottom: 6px;">💬</div>
+                                        <div style="font-size: 12px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px;">Chatbot</div>
+                                        <div style="font-size: 9px; color: #999;" data-i18n="chatbotDesc">AI 챗봇 자동 응대</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- 5. Visit -->
-                    <div class="workflow-node" data-step="5" style="left: 50%; top: 920px; transform: translateX(-50%);">
+                    <div class="workflow-node has-link" data-step="5" style="left: 10%; top: 720px;">
                         <div class="node-content">
                             <div class="node-icon">🚗</div>
                             <div class="node-info">
@@ -860,22 +824,29 @@
                         </div>
                     </div>
 
-                    <!-- 6. Consulting -->
-                    <div class="workflow-node" data-step="6" style="left: 50%; top: 1100px; transform: translateX(-50%);">
+                    <!-- 6. Counseling -->
+                    <div class="workflow-node has-link" data-step="6" style="left: 68%; top: 820px;">
                         <div class="node-content">
                             <div class="node-icon">🏥</div>
                             <div class="node-info">
-                                <div class="node-title">Consulting</div>
-                                <div class="node-desc" data-i18n="consultingDesc">상담 및 컨설팅 진행</div>
-                                <a href="https://consultant-evaluation-frontend-srf7lahlsa-du.a.run.app/history" target="_blank" class="node-link" data-i18n="dashboardBtn">
-                                    Dashboard →
+                                <div class="node-title">Counseling</div>
+                                <div class="node-desc" data-i18n="counselingDesc">상담 이력 관리 및 컨설턴트 평가</div>
+                                <a href="https://forte-web-hhlhhgenaq-du.a.run.app/summaries/history" target="_blank" class="node-link">
+                                    <span data-i18n="summaryBtn">상담 요약 →</span>
                                 </a>
+                                <a href="https://consultant-evaluation-frontend-srf7lahlsa-du.a.run.app/history" target="_blank" class="node-link">
+                                    <span data-i18n="evaluationBtn">인사평가 →</span>
+                                </a>
+                                <div style="margin-top: 12px; padding: 8px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; font-size: 10px; font-family: 'Courier New', monospace; color: #856404; line-height: 1.5;">
+                                    <div style="font-weight: 600; margin-bottom: 2px;">id: admin</div>
+                                    <div style="font-weight: 600;">p/w: moathebest1</div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- 7. Sales -->
-                    <div class="workflow-node" data-step="7" style="left: 50%; top: 1280px; transform: translateX(-50%);">
+                    <div class="workflow-node has-link" data-step="7" style="left: 15%; top: 1020px;">
                         <div class="node-content">
                             <div class="node-icon">💰</div>
                             <div class="node-info">
@@ -884,12 +855,16 @@
                                 <a href="https://ai-sales-flow-frontend-17280846291.asia-northeast3.run.app/visits" target="_blank" class="node-link" data-i18n="dashboardBtn">
                                     Dashboard →
                                 </a>
+                                <div style="margin-top: 12px; padding: 8px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; font-size: 10px; font-family: 'Courier New', monospace; color: #856404; line-height: 1.5;">
+                                    <div style="font-weight: 600; margin-bottom: 2px;">id: admin</div>
+                                    <div style="font-weight: 600;">p/w: moabest12!</div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 8. AS (After Service) -->
-                    <div class="workflow-node" data-step="8" style="left: 50%; top: 1460px; transform: translateX(-50%);">
+                    <!-- 8. AS -->
+                    <div class="workflow-node" data-step="8" style="left: 70%; top: 1280px;">
                         <div class="node-content">
                             <div class="node-icon">🔧</div>
                             <div class="node-info">
@@ -899,36 +874,36 @@
                         </div>
                     </div>
 
-                    <!-- AI Agent Nodes - One per workflow step -->
-                    <div class="agent-node" style="left: 8%; top: 200px;">
+                    <!-- AI Agent Nodes - Following workflow sequence -->
+                    <div class="agent-node" style="left: 42%; top: 190px;">
                         <span class="agent-icon">🤖</span>
                         <span>AI Agent</span>
                     </div>
-                    <div class="agent-node" style="left: 92%; top: 380px; transform: translateX(-100%);">
+                    <div class="agent-node" style="left: 88%; top: 250px;">
                         <span class="agent-icon">🤖</span>
                         <span>AI Agent</span>
                     </div>
-                    <div class="agent-node" style="left: 8%; top: 560px;">
+                    <div class="agent-node" style="left: 38%; top: 390px;">
                         <span class="agent-icon">🤖</span>
                         <span>AI Agent</span>
                     </div>
-                    <div class="agent-node" style="left: 92%; top: 740px; transform: translateX(-100%);">
+                    <div class="agent-node" style="left: 90%; top: 540px; transform: translateX(-100%);">
                         <span class="agent-icon">🤖</span>
                         <span>AI Agent</span>
                     </div>
-                    <div class="agent-node" style="left: 8%; top: 920px;">
+                    <div class="agent-node" style="left: 35%; top: 730px;">
                         <span class="agent-icon">🤖</span>
                         <span>AI Agent</span>
                     </div>
-                    <div class="agent-node" style="left: 92%; top: 1100px; transform: translateX(-100%);">
+                    <div class="agent-node" style="left: 92%; top: 880px; transform: translateX(-100%);">
                         <span class="agent-icon">🤖</span>
                         <span>AI Agent</span>
                     </div>
-                    <div class="agent-node" style="left: 8%; top: 1280px;">
+                    <div class="agent-node" style="left: 45%; top: 1030px;">
                         <span class="agent-icon">🤖</span>
                         <span>AI Agent</span>
                     </div>
-                    <div class="agent-node" style="left: 92%; top: 1460px; transform: translateX(-100%);">
+                    <div class="agent-node" style="left: 92%; top: 1290px; transform: translateX(-100%);">
                         <span class="agent-icon">🤖</span>
                         <span>AI Agent</span>
                     </div>
@@ -937,177 +912,125 @@
             </div>
         </div>
 
-        <!-- Dashboard Links Section -->
-        <div class="dashboard-section">
-            <h2 class="section-title">🎛️ Workflow Dashboards</h2>
-            <div class="dashboard-grid">
-                <a href="https://pantarheix-frontend-17280846291.asia-northeast3.run.app/ja" target="_blank" class="dashboard-card">
-                    <div class="dashboard-icon">📱</div>
-                    <div class="dashboard-title">Marketing Dashboard</div>
-                    <div class="dashboard-description">
-                        마케팅 캠페인 관리 및 UTM 추적 대시보드
-                    </div>
-                    <div class="dashboard-link">pantarheix-frontend-17280846291.asia-northeast3.run.app</div>
-                </a>
+        <!-- MOA AI Vision Section -->
+        <div class="vision-section">
+            <h2 class="section-title" data-i18n="visionTitle">💡 MOA AI의 비전</h2>
 
-                <a href="https://moacnc-hospital-back-office-front-282346488044.asia-northeast3.run.app/" target="_blank" class="dashboard-card">
-                    <div class="dashboard-icon">💬</div>
-                    <div class="dashboard-title">CS Dashboard</div>
-                    <div class="dashboard-description">
-                        고객 서비스 요청 관리 및 응대 현황
-                    </div>
-                    <div class="dashboard-link">moacnc-hospital-back-office-front-282346488044.asia-northeast3.run.app</div>
-                </a>
-
-                <a href="https://translator-dispatch-frontend-hhlhhgenaq-du.a.run.app/dispatch?date=2025-10-17" target="_blank" class="dashboard-card">
-                    <div class="dashboard-icon">🚗</div>
-                    <div class="dashboard-title">Visit Dashboard</div>
-                    <div class="dashboard-description">
-                        방문 일정 관리 및 통역사 배치 시스템
-                    </div>
-                    <div class="dashboard-link">translator-dispatch-frontend-hhlhhgenaq-du.a.run.app</div>
-                </a>
-
-                <a href="https://consultant-evaluation-frontend-srf7lahlsa-du.a.run.app/history" target="_blank" class="dashboard-card">
-                    <div class="dashboard-icon">🏥</div>
-                    <div class="dashboard-title">Counseling Dashboard</div>
-                    <div class="dashboard-description">
-                        상담 이력 관리 및 컨설턴트 평가 시스템
-                    </div>
-                    <div class="dashboard-link">consultant-evaluation-frontend-srf7lahlsa-du.a.run.app</div>
-                </a>
-
-                <a href="https://ai-sales-flow-frontend-17280846291.asia-northeast3.run.app/visits" target="_blank" class="dashboard-card">
-                    <div class="dashboard-icon">💰</div>
-                    <div class="dashboard-title">Sales Dashboard</div>
-                    <div class="dashboard-description">
-                        영업 프로세스 관리 및 방문 현황 추적
-                    </div>
-                    <div class="dashboard-link">ai-sales-flow-frontend-17280846291.asia-northeast3.run.app</div>
-                </a>
-            </div>
-        </div>
-
-        <!-- Memo Section -->
-        <div class="memo-section">
-            <h2 class="section-title" data-i18n="memoTitle">📝 Workflow Memos</h2>
-            <div class="memo-grid">
-                <!-- CS Memo -->
-                <div class="memo-card">
-                    <div class="memo-header">
-                        <div class="memo-title">💬 CS 팁</div>
-                        <button class="memo-copy-btn" onclick="copyMemo('cs-memo')" data-i18n="copyBtn">복사</button>
-                    </div>
-                    <div class="memo-content" id="cs-memo">에이비
-10/18 토 11:00
-ITOMIO TESTER
-이토 미오 테스터
-여
-010330
-08088887777
-도쿄
-트위터
-쥬베룩볼륨,물광주사,라라필
-특이사항: 대기시간 안내완</div>
+            <div class="vision-content">
+                <div class="vision-paragraph">
+                    <p>
+                        비즈니스는 <strong>방대한 데이터를 보유하고 있음에도</strong>, <span class="highlight">성과의 원인과 결과를 연결하지 못하는 구조적 한계</span>가 있습니다.<br>
+                        부서와 시스템 간 데이터는 단절되어 있으며, 마케팅·운영·정책·콘텐츠의 상호작용이 실제 성과(LTV, 전환율, 효율)에 어떤 영향을 미치는지 명확히 파악하기 어렵습니다.<br>
+                        이러한 단절은 리소스의 낭비와 왜곡된 의사결정을 초래하고, <span class="highlight">예측 불가능한 성장</span>으로 이어집니다.
+                    </p>
                 </div>
 
-                <!-- Sales Memo -->
-                <div class="memo-card">
-                    <div class="memo-header">
-                        <div class="memo-title">💰 Sales</div>
-                        <button class="memo-copy-btn" onclick="copyMemo('sales-memo')" data-i18n="copyBtn">복사</button>
-                    </div>
-                    <div class="memo-content" id="sales-memo">080-2003-1106
-TT4539268
-9/19 메타뷰O 귀금속O
--연갈색 캡모자/갈색 중단발/흰색 상의/검정 바지
+                <div class="vision-paragraph">
+                    <p>
+                        <strong>MOA AI Workflow Architecture</strong>는 이 근본적 문제를 해결하기 위해 <span class="highlight-blue">Graph RAG 기반의 워크플로우 구조화</span>를 도입합니다.<br>
+                        모든 데이터와 프로세스를 하나의 그래프로 연결함으로써, 조직의 활동 전 과정을 통합적으로 이해하고, <span class="highlight-blue">각 단계 간의 인과 관계를 실시간으로 분석</span>합니다.<br>
+                        이를 통해 마케팅 성과의 불확실성을 제거하고, 리소스 흐름의 병목을 해소하며, 정책과 콘텐츠가 실제 비즈니스 성과에 미치는 영향을 정밀하게 추적할 수 있습니다.
+                    </p>
+                </div>
 
-룸1
-보톡스 필러 주의사항 전달 완
-눈밑 더크서클 시술 권유드림
-
-미간보톡스 동행이벤트
-필러 리쥬비엘 1cc 귀족 팔자  240,000원
-티타늄백설패키지2 1,250,000원
-티타늄 80kj(stack 하악부 이중턱 +SHR 중안면)
-무통 (포르테주사 6cc 중안면 중심 코 얼전 + 2제 2.5cc 중안면 +물광주사 2.5cc 이마)
-3D-Meta Vu 10,000원
-무통 시스템 45,000원
-마취크림
-1,545,000원 / 김지우</div>
+                <div class="vision-paragraph vision-final">
+                    <p>
+                        MOA AI는 <span class="highlight-green">데이터를 관계와 맥락으로 해석</span>하고, <span class="highlight-green">문제의 구조를 드러내며</span>, <strong class="highlight-green-strong">불확실한 의사결정을 예측 가능한 성장 메커니즘으로 전환</strong>합니다.<br>
+                        이는 단순한 자동화가 아닌, 조직이 <strong>문제점을 파악하고, 학습하고, 최적화하는</strong> <span class="highlight-green-strong">지능형 워크플로우의 실현</span>을 의미합니다.
+                    </p>
                 </div>
             </div>
         </div>
+
     </div>
 
     <script>
         // Translation Data
         const translations = {
             ko: {
-                back: 'Back to Chat',
-                logout: 'Logout',
                 title: 'MOA AI Workflow Architecture',
-                subtitle: 'Graph RAG 기반 AI Agents 자동화 워크플로우 시스템',
+                subtitle: '자동화와 효율화를 통해 가치 있는 인사이트를 창출하고, 이를 기반으로 ',
+                subtitleHighlight: '지속 가능한 성장을 실현',
                 aiAgentsTitle: 'AI Agents 자동화',
                 aiAgentsDesc: '각 워크플로우 단계에 AI 에이전트를 배치하여 작업을 자동화하고 효율성을 극대화합니다.',
                 graphRagTitle: 'Graph RAG 구성',
-                graphRagDesc: '연결된 워크플로우를 Graph RAG로 구성하여 맥락 기반 의사결정과 최적화를 실현합니다.',
+                graphRagDesc: 'Graph RAG로 워크플로우를 연결하여, 복잡한 맥락 속에서도 ',
+                graphRagHighlight: '인과를 넘어선 통찰과 정밀한 예측',
+                graphRagDesc2: '을 만들어갑니다.',
                 utmTitle: 'UTM UUID 추적',
                 utmDesc: '마케팅부터 AS까지 전 과정을 UUID로 추적하여 고객 여정을 완벽하게 분석합니다.',
                 quantifyTitle: '정량화 분석',
-                quantifyDesc: '병목, 리워크, 핸드오버 문제를 정량화하여 사용자 경험을 지속적으로 개선합니다.',
+                quantifyDesc: '병목, 리워크, 핸드오버의 ',
+                quantifyHighlight: '근본 원인을 규명',
+                quantifyDesc2: '하고, 데이터 기반으로 ',
+                quantifyHighlight2: '실질적인 문제 해결',
+                quantifyDesc3: '을 이끕니다.',
                 workflowTitle: 'MOA AI Workflow - Graph RAG',
                 utmTracking: 'UTM UUID Tracking',
                 utmJourney: 'Marketing → AS 전체 여정 추적',
                 memoTitle: 'Workflow Memos',
                 copyBtn: '복사',
                 copied: '✓ 복사됨',
-                // Workflow nodes
                 marketingDesc: '마케팅 캠페인 관리 및 UTM 추적',
                 designDesc: '디자인 및 콘텐츠 제작',
                 creativeDesc: '크리에이티브 검토 및 라이브',
                 csDesc: '고객 서비스 요청 관리 및 응대',
+                reservationDesc: '예약 접수 및 일정 관리',
+                precallDesc: '사전 상담 및 확인',
+                chatbotDesc: 'AI 챗봇 자동 응대',
                 visitDesc: '방문 일정 관리 및 통역사 배치',
-                consultingDesc: '상담 및 컨설팅 진행',
+                counselingDesc: '상담 이력 관리 및 컨설턴트 평가',
                 salesDesc: '영업 프로세스 관리 및 방문 현황',
                 asDesc: '사후 관리 및 고객 만족도 관리',
-                dashboardBtn: 'Dashboard →'
+                dashboardBtn: 'Dashboard →',
+                dispatchBtn: '인력 배치 →',
+                summaryBtn: '상담 요약 →',
+                evaluationBtn: '인사평가 →'
             },
             ja: {
-                back: 'チャットに戻る',
-                logout: 'ログアウト',
                 title: 'MOA AIワークフローアーキテクチャ',
-                subtitle: 'Graph RAGベースのAI Agents自動化ワークフローシステム',
+                subtitle: '自動化と効率化を通じて価値あるインサイトを創出し、これを基盤に ',
+                subtitleHighlight: '持続可能な成長を実現',
                 aiAgentsTitle: 'AI Agents自動化',
                 aiAgentsDesc: '各ワークフローステップにAIエージェントを配置し、作業を自動化して効率を最大化します。',
                 graphRagTitle: 'Graph RAG構成',
-                graphRagDesc: '接続されたワークフローをGraph RAGで構成し、コンテキストベースの意思決定と最適化を実現します。',
+                graphRagDesc: 'Graph RAGでワークフローを連結し、複雑なコンテキストの中でも ',
+                graphRagHighlight: '因果を超えた洞察と精密な予測',
+                graphRagDesc2: 'を作り出します。',
                 utmTitle: 'UTM UUID追跡',
                 utmDesc: 'マーケティングからASまでの全プロセスをUUIDで追跡し、顧客ジャーニーを完全に分析します。',
                 quantifyTitle: '定量化分析',
-                quantifyDesc: 'ボトルネック、リワーク、ハンドオーバーの問題を定量化し、ユーザー体験を継続的に改善します。',
+                quantifyDesc: 'ボトルネック、リワーク、ハンドオーバーの ',
+                quantifyHighlight: '根本原因を究明',
+                quantifyDesc2: 'し、データ基盤で ',
+                quantifyHighlight2: '実質的な問題解決',
+                quantifyDesc3: 'を導きます。',
                 workflowTitle: 'MOA AIワークフロー - Graph RAG',
                 utmTracking: 'UTM UUID追跡',
                 utmJourney: 'マーケティング → AS 全体ジャーニー追跡',
                 memoTitle: 'ワークフローメモ',
                 copyBtn: 'コピー',
                 copied: '✓ コピー完了',
-                // Workflow nodes
                 marketingDesc: 'マーケティングキャンペーン管理及びUTM追跡',
                 designDesc: 'デザイン及びコンテンツ制作',
                 creativeDesc: 'クリエイティブレビュー及びライブ',
                 csDesc: '顧客サービス要請管理及び対応',
+                reservationDesc: '予約受付及びスケジュール管理',
+                precallDesc: '事前相談及び確認',
+                chatbotDesc: 'AIチャットボット自動対応',
                 visitDesc: '訪問スケジュール管理及び通訳者配置',
-                consultingDesc: 'カウンセリング及びコンサルティング進行',
+                counselingDesc: 'カウンセリング履歴管理及びコンサルタント評価',
                 salesDesc: '営業プロセス管理及び訪問現況',
                 asDesc: 'アフターサービス管理及び顧客満足度管理',
-                dashboardBtn: 'ダッシュボード →'
+                dashboardBtn: 'ダッシュボード →',
+                dispatchBtn: '人材配置 →',
+                summaryBtn: 'カウンセリング要約 →',
+                evaluationBtn: '人事評価 →'
             }
         };
 
         // Switch Language
         function switchLanguage(lang) {
-            // Update active button
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.dataset.lang === lang) {
@@ -1115,7 +1038,6 @@ TT4539268
                 }
             });
 
-            // Update all i18n elements
             document.querySelectorAll('[data-i18n]').forEach(element => {
                 const key = element.dataset.i18n;
                 if (translations[lang][key]) {
@@ -1123,50 +1045,21 @@ TT4539268
                 }
             });
 
-            // Save preference
             localStorage.setItem('preferred-language', lang);
         }
 
-        // Load saved language preference
+        // Load saved language
         function loadLanguagePreference() {
             const savedLang = localStorage.getItem('preferred-language') || 'ko';
             switchLanguage(savedLang);
         }
 
-        // Load user info
-        async function loadUserInfo() {
-            try {
-                const response = await fetch('/api/user');
-                const data = await response.json();
-
-                if (data.logged_in) {
-                    document.getElementById('userName').textContent = data.user.name;
-                    if (data.user.picture) {
-                        const avatar = document.getElementById('userAvatar');
-                        avatar.src = data.user.picture;
-                        avatar.style.display = 'block';
-                    }
-                } else {
-                    window.location.href = '/login';
-                }
-            } catch (error) {
-                console.error('Failed to load user info:', error);
-                window.location.href = '/login';
-            }
-        }
-
-        // Logout
-        function logout() {
-            window.location.href = '/logout';
-        }
-
-        // Copy Memo to Clipboard
+        // Copy Memo
         function copyMemo(memoId) {
             const memoElement = document.getElementById(memoId);
             const text = memoElement.textContent;
             const lang = localStorage.getItem('preferred-language') || 'ko';
 
-            // Create temporary textarea
             const textarea = document.createElement('textarea');
             textarea.value = text;
             textarea.style.position = 'fixed';
@@ -1176,7 +1069,6 @@ TT4539268
 
             try {
                 document.execCommand('copy');
-                // Show feedback
                 const button = event.target;
                 const originalText = button.textContent;
                 button.textContent = translations[lang].copied;
@@ -1193,29 +1085,45 @@ TT4539268
             }
         }
 
-        // Draw Graph RAG Connections
+        // Draw Connections
         function drawConnections() {
             const svg = document.getElementById('graphCanvas');
             const container = document.getElementById('workflowGrid');
 
             if (!svg || !container) return;
 
-            // Set SVG size
             svg.setAttribute('width', container.offsetWidth);
             svg.setAttribute('height', container.offsetHeight);
 
-            // Workflow connections (sequential flow with connections)
+            // Forward workflow connections with semantic labels
             const workflowConnections = [
-                [1, 2], // Marketing to Design
-                [2, 3], // Design to Creative Review
-                [3, 4], // Creative Review to CS
-                [4, 5], // CS to Visit
-                [5, 6], // Visit to Consulting
-                [6, 7], // Consulting to Sales
-                [7, 8]  // Sales to AS
+                {from: 1, to: 2, label: 'creates', type: 'forward'},
+                {from: 1, to: 3, label: 'triggers', type: 'forward'},
+                {from: 2, to: 4, label: 'delivers', type: 'forward'},
+                {from: 3, to: 4, label: 'activates', type: 'forward'},
+                {from: 4, to: 5, label: 'schedules', type: 'forward'},
+                {from: 5, to: 6, label: 'enables', type: 'forward'},
+                {from: 5, to: 7, label: 'feeds_into', type: 'forward'},
+                {from: 6, to: 8, label: 'completes', type: 'forward'},
+                {from: 7, to: 8, label: 'transitions', type: 'forward'}
             ];
 
-            // Get node positions
+            // Feedback loops - showing causal insights
+            const feedbackConnections = [
+                {from: 4, to: 1, label: 'insights', type: 'feedback'},
+                {from: 6, to: 4, label: 'refines', type: 'feedback'},
+                {from: 7, to: 1, label: 'optimizes', type: 'feedback'},
+                {from: 8, to: 1, label: 'informs', type: 'feedback'}
+            ];
+
+            // Context propagation - UTM UUID enrichment
+            const contextConnections = [
+                {from: 1, to: 4, label: 'UTM', type: 'context'},
+                {from: 4, to: 5, label: 'Context', type: 'context'},
+                {from: 5, to: 6, label: 'History', type: 'context'},
+                {from: 6, to: 8, label: 'Journey', type: 'context'}
+            ];
+
             function getNodeCenter(step) {
                 const node = document.querySelector(`[data-step="${step}"]`);
                 if (!node) return null;
@@ -1227,10 +1135,10 @@ TT4539268
                 };
             }
 
-            // Draw workflow connections
-            workflowConnections.forEach(([from, to]) => {
-                const start = getNodeCenter(from);
-                const end = getNodeCenter(to);
+            // Draw forward workflow connections
+            workflowConnections.forEach(conn => {
+                const start = getNodeCenter(conn.from);
+                const end = getNodeCenter(conn.to);
 
                 if (start && end) {
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -1239,10 +1147,76 @@ TT4539268
                     path.setAttribute('d', d);
                     path.setAttribute('class', 'connection-line');
                     svg.appendChild(path);
+
+                    // Add semantic label
+                    const labelX = (start.x + end.x) / 2;
+                    const labelY = (start.y + end.y) / 2;
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', labelX);
+                    label.setAttribute('y', labelY - 5);
+                    label.setAttribute('class', 'relation-label');
+                    label.textContent = conn.label;
+                    svg.appendChild(label);
                 }
             });
 
-            // Draw agent connections (agent nodes to workflow nodes)
+            // Draw feedback loops
+            feedbackConnections.forEach(conn => {
+                const start = getNodeCenter(conn.from);
+                const end = getNodeCenter(conn.to);
+
+                if (start && end) {
+                    const offsetX = 150;
+                    const controlX1 = start.x - offsetX;
+                    const controlX2 = end.x - offsetX;
+                    const d = `M ${start.x} ${start.y} C ${controlX1} ${start.y}, ${controlX2} ${end.y}, ${end.x} ${end.y}`;
+
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', d);
+                    path.setAttribute('class', 'connection-line-feedback');
+                    svg.appendChild(path);
+
+                    // Add feedback label
+                    const labelX = Math.min(start.x, end.x) - offsetX;
+                    const labelY = (start.y + end.y) / 2;
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', labelX);
+                    label.setAttribute('y', labelY);
+                    label.setAttribute('class', 'relation-label relation-label-feedback');
+                    label.textContent = conn.label;
+                    svg.appendChild(label);
+                }
+            });
+
+            // Draw context propagation
+            contextConnections.forEach(conn => {
+                const start = getNodeCenter(conn.from);
+                const end = getNodeCenter(conn.to);
+
+                if (start && end) {
+                    const offsetX = 120;
+                    const controlX1 = start.x + offsetX;
+                    const controlX2 = end.x + offsetX;
+                    const d = `M ${start.x} ${start.y} C ${controlX1} ${start.y}, ${controlX2} ${end.y}, ${end.x} ${end.y}`;
+
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', d);
+                    path.setAttribute('class', 'connection-line-context');
+                    path.setAttribute('marker-end', 'url(#arrowhead-context)');
+                    svg.appendChild(path);
+
+                    // Add context label
+                    const labelX = Math.max(start.x, end.x) + offsetX;
+                    const labelY = (start.y + end.y) / 2;
+                    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    label.setAttribute('x', labelX);
+                    label.setAttribute('y', labelY);
+                    label.setAttribute('class', 'relation-label relation-label-context');
+                    label.textContent = conn.label;
+                    svg.appendChild(label);
+                }
+            });
+
             const agentNodes = document.querySelectorAll('.agent-node');
             const workflowNodes = document.querySelectorAll('.workflow-node');
 
@@ -1270,7 +1244,7 @@ TT4539268
             });
         }
 
-        // Workflow Animation
+        // Animate Workflow
         function animateWorkflow() {
             const nodes = document.querySelectorAll('.workflow-node');
             let currentIndex = 0;
@@ -1285,7 +1259,6 @@ TT4539268
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadLanguagePreference();
-            loadUserInfo();
             setTimeout(() => {
                 drawConnections();
                 animateWorkflow();

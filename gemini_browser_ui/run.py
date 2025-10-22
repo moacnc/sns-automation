@@ -259,6 +259,17 @@ def moa_architecture():
     return response
 
 
+@app.route('/moa_ai_architecture_public.html')
+def moa_architecture_public():
+    """MOA AI Architecture public page - no login required"""
+    response = app.make_response(render_template('moa_ai_architecture_public.html'))
+    # Prevent caching to avoid loading old versions
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+
 @app.route('/api/user')
 def get_user():
     """Get current user info"""
